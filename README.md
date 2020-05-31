@@ -8,12 +8,18 @@ TODO: the dataflow part
 ## Quickstart
 
 ```sh
+# jq is not required, but nice to have
+sudo apt install docker.io docker-compose jq
+
 # Start debezium + example postgres db
 export DEBEZIUM_VERSION=1.1
 docker-compose up
 
-# Setup connector
-curl -i -X POST -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/ -d @register-postgres.json
+# Setup/update connector
+curl -i -X DELETE http://localhost:8083/connectors/inventory-connector \
+&& curl -i -X POST -H "Accept:application/json" \
+                  -H  "Content-Type:application/json" http://localhost:8083/connectors/ \
+                  -d @register-postgres.json
 
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres

@@ -19,9 +19,8 @@ if __name__ == '__main__':
             if msg is None:
                 continue
 
-            data = msg.value()
-            if data is not None:
-                print(data)
+            print('key:', msg.key())
+            print('value:', msg.value())
         except KeyboardInterrupt:
             break
 
