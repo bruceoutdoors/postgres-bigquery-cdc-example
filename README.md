@@ -9,6 +9,7 @@ TODO: the dataflow part
 
 ```sh
 # Start debezium + example postgres db
+export DEBEZIUM_VERSION=1.1
 docker-compose up
 
 # Setup connector
