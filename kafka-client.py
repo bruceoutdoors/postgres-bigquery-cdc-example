@@ -12,6 +12,7 @@ if __name__ == '__main__':
     consumer = DeserializingConsumer(consumer_conf)
     consumer.subscribe(['dbserver1.inventory.customers'])
 
+    print('Listening...')
     while True:
         try:
             # SIGINT can't be handled when polling, limit timeout to 1 second.

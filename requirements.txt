@@ -1,1 +1,3 @@
+fastavro==0.21.23
 confluent-kafka[avro] 
+apache-beam[gcp]>=2.16.0
