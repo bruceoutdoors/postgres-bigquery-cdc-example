@@ -8,6 +8,12 @@ from apache_beam.io.external.kafka import ReadFromKafka
 import logging
 # from simple_avro_deserializer import SimpleAvroDeserializer
 
+def format_result(kafka_kv):
+    (key, value) = [x.decode("utf-8") for x in kafka_kv]
+    print('bruce:', key)
+    print('eric:', value)
+    return '%s: %d' % (key, value)
+
 def run(argv=None, save_main_session=True):
     """Main entry point; defines and runs the wordcount pipeline."""
 
@@ -22,22 +28,15 @@ def run(argv=None, save_main_session=True):
         dest='output',
         # CHANGE 1/5: The Google Cloud Storage path is required
         # for outputting the results.
-        default='gs://YOUR_OUTPUT_BUCKET/AND_OUTPUT_PREFIX',
+        default='output.txt',
         help='Output file to write results to.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     pipeline_args.extend([
-        # CHANGE 2/5: (OPTIONAL) Change this to DataflowRunner to
-        # run your pipeline on the Google Cloud Dataflow Service.
         '--runner=PortableRunner',
+        '--parallelism=2',
         # CHANGE 3/5: Your project ID is required in order to run your pipeline on
         # the Google Cloud Dataflow Service.
         '--project=SET_YOUR_PROJECT_ID_HERE',
-        # CHANGE 4/5: Your Google Cloud Storage path is required for staging local
-        # files.
-        '--staging_location=gs://YOUR_BUCKET_NAME/AND_STAGING_DIRECTORY',
-        # CHANGE 5/5: Your Google Cloud Storage path is required for temporary
-        # files.
-        '--temp_location=gs://YOUR_BUCKET_NAME/AND_TEMP_DIRECTORY',
         '--job_name=your-wordcount-job',
     ])
 
@@ -46,20 +45,22 @@ def run(argv=None, save_main_session=True):
     pipeline_options = PipelineOptions(pipeline_args)
     pipeline_options.view_as(SetupOptions).save_main_session = save_main_session
 
-    pipeline_options.view_as(StandardOptions).streaming = True
+    # pipeline_options.view_as(StandardOptions).streaming = True
 
     # deserializer = SimpleAvroDeserializer('http://127.0.0.1:8081')
 
     with beam.Pipeline(options=pipeline_options) as p:
-        output = p | 'Read from Kafka' >> ReadFromKafka(
+        kafka_kv = p | 'Read from Kafka' >> ReadFromKafka(
                 consumer_config = {
                     'bootstrap.servers' : 'localhost:9092'
                 },
                 topics=['dbserver1.inventory.customers'],
-                # key_deserializer=deserializer,
-                # value_deserializer=deserializer,
+                key_deserializer='org.apache.kafka.common.serialization.ByteArrayDeserializer',
+                value_deserializer='org.apache.kafka.common.serialization.ByteArrayDeserializer',
             )
-        #    | 'Write to file' >> beam.io.WriteToText('beam.out')
+        text_data = kafka_kv | 'Format Kafka KV Pairs to Text' >> beam.Map(format_result)
+
+        text_data | 'Write to File' >> beam.io.WriteToText(known_args.output)
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
