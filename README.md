@@ -11,6 +11,13 @@ A CDC pipeline that streams postgres database table changes to Bigquery via Debe
 ## Quickstart
 
 ```sh
+# Python 3.8 is not supported in Beam 2.21. To install Python 3.7 in Ubuntu 20.04 you can do:
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.7
+virtualenv --python=python3.7 ~/py37
+source ~/py37/bin/activate
+
 # jq is not required, but nice to have
 sudo apt install docker.io docker-compose jq
 
