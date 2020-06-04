@@ -40,7 +40,7 @@ curl -H "Accept:application/json" localhost:8083/connectors/inventory-connector 
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres
 # ...you can also access from within the docker container
-docker-compose -f docker-compose-postgres.yaml exec postgres bash -c 'psql -U postgres postgres'
+docker-compose exec postgres bash -c 'psql -U postgres postgres'
 
 # Start test kafka client
 pip3 install -r requirements.txt
