@@ -18,16 +18,6 @@ services:
     environment:
       - ZOOKEEPER_CONNECT=zookeeper:2181
 
-  postgres:
-    image: debezium/example-postgres:${DEBEZIUM_VERSION}
-    ports:
-      - 5432:5432
-    networks:
-      - dbz-net
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-
   schema-registry:
     image: confluentinc/cp-schema-registry
     ports:
@@ -51,12 +41,25 @@ services:
       - CONFIG_STORAGE_TOPIC=my_connect_configs
       - OFFSET_STORAGE_TOPIC=my_connect_offsets
       - STATUS_STORAGE_TOPIC=my_connect_statuses
-      - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
-      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
-      - INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-      - INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
+
+  # ** Here on are outside the debezium setup **
+  postgres:
+    image: debezium/example-postgres:${DEBEZIUM_VERSION}
+    ports:
+      - 5432:5432
+    networks:
+      - dbz-net
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  pubsub:
+    image: gcr.io/google.com/cloudsdktool/cloud-sdk
+    ports:
+      - 8085:8085
+    networks:
+      - dbz-net
+    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
 
 networks:
   dbz-net:

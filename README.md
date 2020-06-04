@@ -1,7 +1,7 @@
 Postgres to BigQuery CDC Pipeline Example
 =========================================
 
-A CDC pipeline that streams postgres database table changes to Bigquery via Debezium, Avro, Dataflow+Python.
+A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Dataflow+Python.
 
 ## TODO:
 
@@ -11,6 +11,13 @@ A CDC pipeline that streams postgres database table changes to Bigquery via Debe
 ## Quickstart
 
 ```sh
+# Python 3.8 is not supported in Beam 2.21. To install Python 3.7 in Ubuntu 20.04 you can do:
+sudo add-apt-repository ppa:deadsnakes/ppa
+sudo apt-get update
+sudo apt-get install python3.7
+virtualenv --python=python3.7 ~/py37
+source ~/py37/bin/activate
+
 # jq is not required, but nice to have
 sudo apt install docker.io docker-compose jq
 
@@ -33,9 +40,20 @@ curl -H "Accept:application/json" localhost:8083/connectors/inventory-connector 
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres
 # ...you can also access from within the docker container
-docker-compose -f docker-compose-postgres.yaml exec postgres bash -c 'psql -U postgres postgres'
+docker-compose exec postgres bash -c 'psql -U postgres postgres'
 
 # Start test kafka client
-pip3 install -r requirements.txt
-python3 kafka-client.py
+pip install -r requirements.txt
+python kafka-client.py
+
+# -----------------------------------------------------------------------------------
+
+# Set env for pubsub to run locally
+export PUBSUB_EMULATOR_HOST=localhost:8085
+
+# Start kafka -> pubsub server
+python kafka-pubsub.py
+
+# Start pubsub client
+python pubsub-client.py
 ```
