@@ -25,11 +25,6 @@ def run(argv=None, save_main_session=True):
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--input',
-        dest='input',
-        default='gs://dataflow-samples/shakespeare/kinglear.txt',
-        help='Input file to process.')
-    parser.add_argument(
         '--output',
         dest='output',
         default='output.txt',
@@ -42,11 +37,9 @@ def run(argv=None, save_main_session=True):
     # We use the save_main_session option because one or more DoFn's in this
     # workflow rely on global context (e.g., a module imported at module level).
     pipeline_options = PipelineOptions(pipeline_args)
+    
     pipeline_options.view_as(SetupOptions).save_main_session = save_main_session
-
-    # pipeline_options.view_as(StandardOptions).streaming = True
-
-    # deserializer = SimpleAvroDeserializer('http://127.0.0.1:8081')
+    pipeline_options.view_as(StandardOptions).streaming = True
 
     with beam.Pipeline(options=pipeline_options) as p:
         (

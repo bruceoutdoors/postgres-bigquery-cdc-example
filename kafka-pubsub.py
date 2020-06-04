@@ -1,5 +1,6 @@
 from confluent_kafka import DeserializingConsumer
 from google.cloud import pubsub
+from confluent_kafka.serialization import StringDeserializer
 
 if __name__ == '__main__':
     publisher = pubsub.PublisherClient()
@@ -7,10 +8,13 @@ if __name__ == '__main__':
     kafka_topic = 'dbserver1.inventory.customers'
     pubsub_topic = f'projects/{project_id}/topics/{kafka_topic}'
     
-    # publisher.create_topic(pubsub_topic)
+    try:
+        publisher.create_topic(pubsub_topic)
+    except:
+        pass # topic already created. I don't need an error
     
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
-                     'group.id'          : 'mygroup',
+                     'group.id'          : 'kafka-pubsub',
                      'auto.offset.reset' : "earliest"}
 
     consumer = DeserializingConsumer(consumer_conf)
@@ -26,6 +30,7 @@ if __name__ == '__main__':
 
             # We don't use msg.key()
             print('Pushed:', msg.value())
+
             publisher.publish(pubsub_topic, msg.value())
         except KeyboardInterrupt:
             break

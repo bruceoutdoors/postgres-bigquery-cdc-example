@@ -1,10 +1,8 @@
 from confluent_kafka import DeserializingConsumer
-from confluent_kafka.serialization import StringDeserializer
 
 if __name__ == '__main__':
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
-                     'key.deserializer'  : StringDeserializer,
-                     'group.id'          : 'mygroup',
+                     'group.id'          : 'kafka-client',
                      'auto.offset.reset' : "earliest"}
 
     consumer = DeserializingConsumer(consumer_conf)
@@ -19,6 +17,7 @@ if __name__ == '__main__':
                 continue
 
             print(msg.value())
+            print()
         except KeyboardInterrupt:
             break
 
