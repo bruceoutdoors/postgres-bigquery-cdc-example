@@ -4,14 +4,14 @@ from confluent_kafka.serialization import StringDeserializer
 
 if __name__ == '__main__':
     publisher = pubsub.PublisherClient()
-    project_id = 'craftycoconuts'
+    project_id = 'crafty-apex-264713'
     kafka_topic = 'dbserver1.inventory.customers'
     pubsub_topic = f'projects/{project_id}/topics/{kafka_topic}'
     
     try:
         publisher.create_topic(pubsub_topic)
     except:
-        pass # topic already created. I don't need an error
+        pass # I don't need an error if topic already created.
     
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
                      'group.id'          : 'kafka-pubsub',
@@ -29,7 +29,7 @@ if __name__ == '__main__':
                 continue
 
             # We don't use msg.key()
-            print('Pushed:', msg.value())
+            print(f'Pushed: {msg.value()}\n')
 
             publisher.publish(pubsub_topic, msg.value())
         except KeyboardInterrupt:
