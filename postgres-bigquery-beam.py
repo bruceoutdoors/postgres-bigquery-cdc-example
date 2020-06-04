@@ -2,9 +2,8 @@ from __future__ import absolute_import
 import argparse
 import apache_beam as beam
 from apache_beam import window
-from apache_beam.options.pipeline_options import PipelineOptions
-from apache_beam.options.pipeline_options import SetupOptions
-from apache_beam.options.pipeline_options import StandardOptions
+from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
+from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
 import logging
 from datetime import date
 
@@ -58,9 +57,11 @@ def run(argv=None, save_main_session=True):
               | 'Json -> Row'
                     >> json_to_row
               | 'Write to BigQuery'
-                    >> beam.io.WriteToBigQuery(
+                    >> WriteToBigQuery(
+                            'crafty-apex-264713:inventory.customers',
                             schema='insert_date:DATETIME, json_dat:STRING',
-                            create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+                            create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
+                            write_disposition=BigQueryDisposition.WRITE_APPEND
                        )
         )
 
