@@ -10,11 +10,6 @@
         "database.dbname" : "postgres",
         "database.server.name": "dbserver1",
         "schema.whitelist": "inventory",
-        "plugin.name": "pgoutput",
-        "transforms": "unwrap",
-        "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
-        "transforms.unwrap.drop.tombstones": true,
-        "transforms.unwrap.delete.handling.mode": "rewrite",
-        "transforms.unwrap.add.fields": "source.ts_ms,op,lsn"
+        "plugin.name": "pgoutput"
     }
 }

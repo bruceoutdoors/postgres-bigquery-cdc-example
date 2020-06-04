@@ -17,12 +17,6 @@ services:
       - dbz-net
     environment:
       - ZOOKEEPER_CONNECT=zookeeper:2181
-      # I'm not sure how to get log compaction working...
-      - KAFKA_LOG_CLEANER_MIN_COMPACTION_LAG_MS=100
-      - KAFKA_LOG_CLEANUP_POLICY=compact
-      - KAFKA_LOG_CLEANER_DELETE_RETENTION_MS=100
-      - KAFKA_SEGMENT_MS=100
-      - KAFKA_MIN_CLEANABLE_DIRTY_RATIO=0.01
 
   schema-registry:
     image: confluentinc/cp-schema-registry
@@ -47,12 +41,6 @@ services:
       - CONFIG_STORAGE_TOPIC=my_connect_configs
       - OFFSET_STORAGE_TOPIC=my_connect_offsets
       - STATUS_STORAGE_TOPIC=my_connect_statuses
-      - KEY_CONVERTER=io.confluent.connect.avro.AvroConverter
-      - VALUE_CONVERTER=io.confluent.connect.avro.AvroConverter
-      - INTERNAL_KEY_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-      - INTERNAL_VALUE_CONVERTER=org.apache.kafka.connect.json.JsonConverter
-      - CONNECT_KEY_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
-      - CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL=http://schema-registry:8081
 
   # ** Here on are outside the debezium setup **
   postgres:

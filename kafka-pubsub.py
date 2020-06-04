@@ -10,10 +10,6 @@ if __name__ == '__main__':
     # publisher.create_topic(pubsub_topic)
     
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
-                     # Default serializer converts bytes array to byte string and drops
-                     # the magic byte, so we need override it to just return the value
-                     'value.deserializer': lambda val, ctx: val,
-                     'key.deserializer'  : lambda val, ctx: val,
                      'group.id'          : 'mygroup',
                      'auto.offset.reset' : "earliest"}
 
