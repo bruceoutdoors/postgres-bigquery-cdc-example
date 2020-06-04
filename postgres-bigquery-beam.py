@@ -49,13 +49,13 @@ def run(argv=None, save_main_session=True):
                     beam.WindowInto(window.FixedWindows(2))
               | 'Json -> Row' >>
                     beam.FlatMap(json_to_row)
-              | 'Write to BigQuery'
-                    >> WriteToBigQuery(
-                            'crafty-apex-264713:inventory.customers',
-                            schema='insert_date:DATETIME, json_dat:STRING',
-                            create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
-                            write_disposition=BigQueryDisposition.WRITE_APPEND
-                       )
+              | 'Write to BigQuery' >>
+                    WriteToBigQuery(
+                        'crafty-apex-264713:inventory.customers',
+                        schema='insert_date:DATETIME, json_dat:STRING',
+                        create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
+                        write_disposition=BigQueryDisposition.WRITE_APPEND
+                    )
         )
 
 if __name__ == '__main__':
