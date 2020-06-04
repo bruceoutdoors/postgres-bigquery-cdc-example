@@ -45,7 +45,6 @@ def run(argv=None, save_main_session=True):
         (
             p | 'Read from PubSub' >>
                     beam.io.ReadFromPubSub(topic=pubsub_topic)
-                        .with_output_types(bytes)
               | '2 Second Window' >>
                     beam.WindowInto(window.FixedWindows(2))
               | 'Json -> Row' >>
