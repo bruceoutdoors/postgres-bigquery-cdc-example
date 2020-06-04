@@ -43,6 +43,17 @@ psql postgresql://postgres:postgres@localhost:5432/postgres
 docker-compose exec postgres bash -c 'psql -U postgres postgres'
 
 # Start test kafka client
-pip3 install -r requirements.txt
-python3 kafka-client.py
+pip install -r requirements.txt
+python kafka-client.py
+
+# -----------------------------------------------------------------------------------
+
+# Set env for pubsub to run locally
+export PUBSUB_EMULATOR_HOST=localhost:8085
+
+# Start kafka -> pubsub server
+python kafka-pubsub.py
+
+# Start pubsub client
+python pubsub-client.py
 ```

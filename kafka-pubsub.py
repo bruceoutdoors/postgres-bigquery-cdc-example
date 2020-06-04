@@ -1,18 +1,25 @@
 from confluent_kafka import DeserializingConsumer
-from simple_avro_deserializer import SimpleAvroDeserializer
+from google.cloud import pubsub
 
 if __name__ == '__main__':
-    serializer = SimpleAvroDeserializer('http://localhost:8081')
+    publisher = pubsub.PublisherClient()
+    project_id = 'craftycoconuts'
+    kafka_topic = 'dbserver1.inventory.customers'
+    pubsub_topic = f'projects/{project_id}/topics/{kafka_topic}'
+    
+    # publisher.create_topic(pubsub_topic)
+
+    
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
-                     'value.deserializer': serializer,
-                     'key.deserializer'  : serializer,
+                     'value.deserializer': lambda a, b: a,
+                     'key.deserializer'  : lambda a, b: a,
                      'group.id'          : 'mygroup',
                      'auto.offset.reset' : "earliest"}
 
     consumer = DeserializingConsumer(consumer_conf)
     consumer.subscribe(['dbserver1.inventory.customers'])
 
-    print('Listening...')
+    print('Publish kafka values to pubsub...')
     while True:
         try:
             # SIGINT can't be handled when polling, limit timeout to 1 second.
@@ -21,7 +28,8 @@ if __name__ == '__main__':
                 continue
 
             # We don't use msg.key()
-            print(msg.value())
+            print('Pushed:', msg.value())
+            publisher.publish(pubsub_topic, msg.value())
         except KeyboardInterrupt:
             break
 
