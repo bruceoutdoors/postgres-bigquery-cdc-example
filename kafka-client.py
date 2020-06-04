@@ -2,10 +2,10 @@ from confluent_kafka import DeserializingConsumer
 from simple_avro_deserializer import SimpleAvroDeserializer
 
 if __name__ == '__main__':
-    brucedeserializer = SimpleAvroDeserializer('http://127.0.0.1:8081')
+    serializer = SimpleAvroDeserializer('http://localhost:8081')
     consumer_conf = {'bootstrap.servers' : 'localhost:9092',
-                     'value.deserializer': brucedeserializer,
-                     'key.deserializer'  : brucedeserializer,
+                     'value.deserializer': serializer,
+                     'key.deserializer'  : serializer,
                      'group.id'          : 'mygroup',
                      'auto.offset.reset' : "earliest"}
 
@@ -20,8 +20,8 @@ if __name__ == '__main__':
             if msg is None:
                 continue
 
-            print('key:', msg.key())
-            print('value:', msg.value())
+            # We don't use msg.key()
+            print(msg.value())
         except KeyboardInterrupt:
             break
 

@@ -14,7 +14,7 @@
         "transforms": "unwrap",
         "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
         "transforms.unwrap.drop.tombstones": true,
-        "transforms.unwrap.delete.handling.mode": "none",
-        "transforms.unwrap.add.fields": "source.ts_ms,op"
+        "transforms.unwrap.delete.handling.mode": "rewrite",
+        "transforms.unwrap.add.fields": "source.ts_ms,op,lsn"
     }
 }

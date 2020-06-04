@@ -40,9 +40,20 @@ curl -H "Accept:application/json" localhost:8083/connectors/inventory-connector 
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres
 # ...you can also access from within the docker container
-docker-compose -f docker-compose-postgres.yaml exec postgres bash -c 'psql -U postgres postgres'
+docker-compose exec postgres bash -c 'psql -U postgres postgres'
 
 # Start test kafka client
-pip3 install -r requirements.txt
-python3 kafka-client.py
+pip install -r requirements.txt
+python kafka-client.py
+
+# -----------------------------------------------------------------------------------
+
+# Set env for pubsub to run locally
+export PUBSUB_EMULATOR_HOST=localhost:8085
+
+# Start kafka -> pubsub server
+python kafka-pubsub.py
+
+# Start pubsub client
+python pubsub-client.py
 ```

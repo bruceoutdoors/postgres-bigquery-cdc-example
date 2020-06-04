@@ -7,15 +7,13 @@ class SimpleAvroDeserializer(Deserializer):
         schema_registry = CachedSchemaRegistryClient({ 'url': schema_registry_url })
         self._serializer = MessageSerializer(schema_registry, None, None)
 
-    def __call__(self, value, ctx):
+    def __call__(self, value, ctx=None):
         if value is None:
             return None
 
-        if ctx.field == 'key':
+        if ctx is not None and ctx.field == 'key':
             decoded = self._serializer.decode_message(value, is_key=True)
-        elif ctx.field == 'value':
-            decoded = self._serializer.decode_message(value, is_key=False)
         else:
-            raise 'What is this: {}'.format(value) 
+            decoded = self._serializer.decode_message(value, is_key=False)
 
         return decoded
