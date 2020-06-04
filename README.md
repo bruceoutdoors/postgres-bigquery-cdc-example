@@ -46,3 +46,11 @@ docker-compose -f docker-compose-postgres.yaml exec postgres bash -c 'psql -U po
 pip3 install -r requirements.txt
 python3 kafka-client.py
 ```
+
+
+## Flink Setup
+
+```
+cd flink-with-docker/
+docker build . -t flink-with-docker --build-arg DOCKER_GID_HOST=$(grep docker /etc/group | cut -d ':' -f 3)
+```
