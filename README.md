@@ -1,12 +1,11 @@
-Postgres to BigQuery CDC Pipeline Example
-=========================================
+# Postgres to BigQuery CDC Pipeline Example
 
 A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Dataflow+Python.
 
-## TODO:
+## TODO
 
- - the dataflow part
- - data persistence for docker setup
+- the dataflow part
+- data persistence for docker setup
 
 ## Quickstart
 
@@ -51,9 +50,10 @@ python kafka-client.py
 # Set env for pubsub to run locally
 export PUBSUB_EMULATOR_HOST=localhost:8085
 
-# Start kafka -> pubsub server
-python kafka-pubsub.py
-
 # Start pubsub client
 python pubsub-client.py
 ```
+
+## Helpful References
+
+- [`confluent_kafka` API](https://docs.confluent.io/current/clients/confluent-kafka-python/)

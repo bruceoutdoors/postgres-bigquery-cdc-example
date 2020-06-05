@@ -18,17 +18,6 @@ services:
     environment:
       - ZOOKEEPER_CONNECT=zookeeper:2181
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry
-    ports:
-      - 8081:8081
-    environment:
-      - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
-      - SCHEMA_REGISTRY_HOST_NAME=schema-registry
-      - SCHEMA_REGISTRY_LISTENERS=http://schema-registry:8081
-    networks:
-      - dbz-net
-
   connect:
     image: debezium/connect:${DEBEZIUM_VERSION}
     ports:
@@ -41,6 +30,15 @@ services:
       - CONFIG_STORAGE_TOPIC=my_connect_configs
       - OFFSET_STORAGE_TOPIC=my_connect_offsets
       - STATUS_STORAGE_TOPIC=my_connect_statuses
+
+  kafpubsub:
+    image: bruceoutdoors/kafpubsub
+    networks:
+      - dbz-net
+    command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
+    environment:
+      - PUBSUB_EMULATOR_HOST=pubsub:8085
+      # - LOGLEVEL=DEBUG
 
   # ** Here on are outside the debezium setup **
   postgres:
