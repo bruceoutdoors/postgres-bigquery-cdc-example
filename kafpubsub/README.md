@@ -7,7 +7,7 @@ Connects kafka with pubsub using a small simple python script. It may be a bette
 ## Build
 
 ```sh
-docker build . -t bruceoutdoors/kafpubsub
+docker build . -t bruceoutdoor/kafpubsub
 ```
 
 ## Usage
@@ -16,11 +16,27 @@ Refer [docker-compose.yaml](../docker-compose.yaml) in postgres-bigquery-cdc-exa
 
 ```yaml
   kafpubsub:
-    image: bruceoutdoors/kafpubsub
+    image: bruceoutdoor/kafpubsub
     networks:
       - dbz-net
     command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
     environment:
       - PUBSUB_EMULATOR_HOST=pubsub:8085
       # - LOGLEVEL=DEBUG # Debug mode notifies on all incoming messages - best to turn off unless required
+```
+
+Alternatively, you can execute the script itself (after `pip install -r requirements.txt`):
+
+```
+usage: kafpubsub.py [-h] [--project PROJECT] --topic TOPIC [--group-id GROUP_ID] [--bootstrap-server BOOTSTRAP_SERVER] [--auto-offset-reset {largest,smallest,error}]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --project PROJECT     Google project ID. Optional if local environment
+  --topic TOPIC         [Kafka] topic
+  --group-id GROUP_ID   [Kafka] Name of the consumer group a consumer belongs to
+  --bootstrap-server BOOTSTRAP_SERVER
+                        [Kafka] bootstrap server
+  --auto-offset-reset {largest,smallest,error}
+                        [Kafka] Action to take when there is no initial offset in offset store or the desired offset is out of range
 ```

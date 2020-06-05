@@ -41,7 +41,7 @@ services:
       - STATUS_STORAGE_TOPIC=my_connect_statuses
 
   kafpubsub:
-    image: bruceoutdoors/kafpubsub
+    image: bruceoutdoor/kafpubsub
     networks:
       - dbz-net
     command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
