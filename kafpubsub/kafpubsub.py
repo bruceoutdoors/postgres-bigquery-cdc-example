@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime
 from google.cloud import pubsub
 from confluent_kafka import DeserializingConsumer
+from google.api_core.exceptions import AlreadyExists
 
 def run():
     logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper())
@@ -46,7 +47,7 @@ def kafpubsub(args):
     
     try:
         publisher.create_topic(pubsub_topic)
-    except:
+    except AlreadyExists:
         pass # I don't need an error if topic already created.
     
     consumer_conf = {'bootstrap.servers' : args.bootstrap_server,
