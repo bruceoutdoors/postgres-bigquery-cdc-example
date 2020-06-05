@@ -1,6 +1,6 @@
 # KafPubSub Image
 
-Connects kafka with pubsub using a small simple python script. It may be a better to use a proper connector like [CloudPubSubConnector](https://github.com/GoogleCloudPlatform/pubsub/tree/master/kafka-connector), but this is what I got working.
+Connects kafka with pubsub using a small [python script](./kafpubsub.py). It may be a better to use a proper connector like [CloudPubSubConnector](https://github.com/GoogleCloudPlatform/pubsub/tree/master/kafka-connector), but this is what I got working.
 
 **This is totally experimental and you should not be using this in production.**
 
