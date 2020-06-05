@@ -1,12 +1,10 @@
-Postgres to BigQuery CDC Pipeline Example
-=========================================
+# Postgres to BigQuery CDC Pipeline Example
 
 A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Dataflow+Python.
 
-## TODO:
+## TODO
 
- - the dataflow part
- - data persistence for docker setup
+- the dataflow part
 
 ## Quickstart
 
@@ -24,6 +22,9 @@ sudo apt install docker.io docker-compose jq
 # Start debezium + example postgres db
 export DEBEZIUM_VERSION=1.1
 docker-compose up
+
+# Remove containers. Append --volumes to drop volumes as well
+docker-compose down
 
 # Setup/update connector
 curl -i -X DELETE http://localhost:8083/connectors/inventory-connector \
@@ -51,9 +52,15 @@ python kafka-client.py
 # Set env for pubsub to run locally
 export PUBSUB_EMULATOR_HOST=localhost:8085
 
-# Start kafka -> pubsub server
-python kafka-pubsub.py
-
 # Start pubsub client
 python pubsub-client.py
 ```
+
+## Helpful References
+
+- [`confluent_kafka` API](https://docs.confluent.io/current/clients/confluent-kafka-python/)
+
+## Related
+
+ - [Kafka Connect BigQuery Connector](https://github.com/wepay/kafka-connect-bigquery) and its [announcement post](https://wecode.wepay.com/posts/kafka-bigquery-connector).
+ - [MySQL → Airflow → GCS → BigQuery pipeline (WePay)](https://wecode.wepay.com/posts/bigquery-wepay)
