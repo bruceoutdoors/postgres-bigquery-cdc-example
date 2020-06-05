@@ -8,6 +8,9 @@ services:
       - 3888
     networks:
       - dbz-net
+    volumes:
+      - zookeeper-data-volume:/zookeeper/data
+      - zookeeper-txns-volume:/zookeeper/txns
 
   kafka:
     image: debezium/kafka:${DEBEZIUM_VERSION}
@@ -15,6 +18,10 @@ services:
       - 9092:9092
     networks:
       - dbz-net
+    volumes:
+      - kafka-data-volume:/kafka/data
+    # kafka may self-destruct (ERR "node already exists") - restart until it lives again
+    restart: on-failure
     environment:
       - ZOOKEEPER_CONNECT=zookeeper:2181
 
@@ -24,6 +31,8 @@ services:
       - 8083:8083
     networks:
       - dbz-net
+    # connect may self-destruct cause kafka can - also restart until it lives again
+    restart: on-failure
     environment:
       - BOOTSTRAP_SERVERS=kafka:9092
       - GROUP_ID=1
@@ -38,7 +47,7 @@ services:
     command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
     environment:
       - PUBSUB_EMULATOR_HOST=pubsub:8085
-      # - LOGLEVEL=DEBUG
+      - LOGLEVEL=DEBUG
 
   # ** Here on are outside the debezium setup **
   postgres:
@@ -47,6 +56,8 @@ services:
       - 5432:5432
     networks:
       - dbz-net
+    volumes:
+      - postgres-volume:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -61,3 +72,9 @@ services:
 
 networks:
   dbz-net:
+
+volumes:
+  zookeeper-txns-volume:
+  zookeeper-data-volume:
+  kafka-data-volume:
+  postgres-volume:
