@@ -20,7 +20,6 @@ source ~/py37/bin/activate
 sudo apt install docker.io docker-compose jq
 
 # Start debezium + example postgres db
-export DEBEZIUM_VERSION=1.1
 docker-compose up
 
 # Remove containers. Append --volumes to drop volumes as well
@@ -32,11 +31,17 @@ curl -i -X DELETE http://localhost:8083/connectors/inventory-connector \
                    -H "Content-Type:application/json" http://localhost:8083/connectors/ \
                    -d @register-postgres.json
 
+curl -i -X DELETE http://localhost:8083/connectors/CPSSinkConnector \
+&& curl -i -X POST -H "Accept:application/json" \
+                   -H "Content-Type:application/json" http://localhost:8083/connectors/ \
+                   -d @register-pubsub.json
+
 # Query available connector
 curl -H "Accept:application/json" localhost:8083/connectors/
 
 # See inventory customer schema in connector
-curl -H "Accept:application/json" localhost:8083/connectors/inventory-connector | jq
+curl -sH "Accept:application/json" localhost:8083/connectors/inventory-connector | jq
+curl -sH "Accept:application/json" localhost:8083/connectors/CPSSinkConnector | jq
 
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres

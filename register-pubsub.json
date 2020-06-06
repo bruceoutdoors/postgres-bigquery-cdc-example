@@ -1,0 +1,10 @@
+{
+    "name": "CPSSinkConnector",
+    "config": {
+        "connector.class": "com.google.pubsub.kafka.sink.CloudPubSubSinkConnector",
+        "cps.topic": "dbserver1.inventory.customers",
+        "cps.project": "crafty-apex-264713",
+        "topics": "dbserver1.inventory.customers",
+        "tasks.max": 1
+    }
+}

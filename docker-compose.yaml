@@ -26,7 +26,7 @@ services:
       - ZOOKEEPER_CONNECT=zookeeper:2181
 
   connect:
-    image: debezium/connect:${DEBEZIUM_VERSION}
+    image: bruceoutdoor/dbz-connect-with-pubsub:${DEBEZIUM_VERSION}
     ports:
       - 8083:8083
     networks:
@@ -35,19 +35,20 @@ services:
     restart: on-failure
     environment:
       - BOOTSTRAP_SERVERS=kafka:9092
+      - PUBSUB_EMULATOR_HOST=pubsub:8085
       - GROUP_ID=1
       - CONFIG_STORAGE_TOPIC=my_connect_configs
       - OFFSET_STORAGE_TOPIC=my_connect_offsets
       - STATUS_STORAGE_TOPIC=my_connect_statuses
 
-  kafpubsub:
-    image: bruceoutdoor/kafpubsub
-    networks:
-      - dbz-net
-    command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
-    environment:
-      - PUBSUB_EMULATOR_HOST=pubsub:8085
-      - LOGLEVEL=DEBUG
+  # kafpubsub:
+  #   image: bruceoutdoor/kafpubsub
+  #   networks:
+  #     - dbz-net
+  #   command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
+  #   environment:
+  #     - PUBSUB_EMULATOR_HOST=pubsub:8085
+  #     - LOGLEVEL=DEBUG
 
   # ** Here on are outside the debezium setup **
   postgres:
