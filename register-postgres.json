@@ -11,10 +11,12 @@
         "database.server.name": "dbserver1",
         "schema.whitelist": "inventory",
         "plugin.name": "pgoutput",
-        "transforms": "unwrap",
+        "transforms": "unwrap,ReplaceField",
         "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState",
         "transforms.unwrap.drop.tombstones": true,
         "transforms.unwrap.delete.handling.mode": "rewrite",
-        "transforms.unwrap.add.fields": "source.ts_ms,op,lsn"
+        "transforms.unwrap.add.fields": "source.ts_ms,op,lsn",
+        "transforms.ReplaceField.type": "org.apache.kafka.connect.transforms.ReplaceField$Value",
+        "transforms.ReplaceField.blacklist": "__deleted"
     }
 }
