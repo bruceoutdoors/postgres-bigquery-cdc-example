@@ -1,18 +1,20 @@
 from google.cloud import pubsub
+from simple_avro_deserializer import SimpleAvroDeserializer
 from confluent_kafka.avro.serializer import SerializerError
 from google.api_core.exceptions import AlreadyExists
 import json
 
 subscriber = pubsub.SubscriberClient()
+serialize = SimpleAvroDeserializer('http://localhost:8081')
 
 def comsume_message(msg):
-    val = msg.data.decode('utf-8')
-
-    try:
-        val = json.loads(val)
-        print(f'Payload: {val}\n')
-    except json.decoder.JSONDecodeError:
-        print(f'Invalid json: {val}\n')
+    if msg.data is not None:
+        # we receive only values
+        try:
+            data = serialize(msg.data)
+        except SerializerError as e:
+            data = f'SerializerError: {e}\nPaylod: {msg.data}'
+        print(data)
 
 if __name__ == '__main__':
     project = 'crafty-apex-264713'
