@@ -1,8 +1,8 @@
-FROM python:3.8-slim
+# Same image as Debezium
+FROM fabric8/java-centos-openjdk11-jdk
 
 WORKDIR /kafpubsub/
 
-COPY requirements.txt /kafpubsub/
-RUN pip install -r requirements.txt
+COPY target/kafpubsub.jar /kafpubsub/
 
-COPY kafpubsub.py /kafpubsub/
+ENTRYPOINT ["java", "-jar", "kafpubsub.jar"]
