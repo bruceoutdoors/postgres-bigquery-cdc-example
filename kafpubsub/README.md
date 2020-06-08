@@ -6,19 +6,19 @@ Alternatively you can consider using a more low level connector API using [Cloud
 
 **This is totally experimental and you should not be using this in production.**
 
-## Build
-
+## Run Locally
 
 ```sh
 # Set env for pubsub to run locally
 export PUBSUB_EMULATOR_HOST=localhost:8085
 
-mvn exec:java -Dexec.args="xxx" # quick run
+mvn exec:java # quick run
 mvn package   # build jar
 
 java -jar target/kafpubsub.jar # run jar
 ```
 
+## Build Docker Image
 
 ```sh
 docker build . -t bruceoutdoor/kafpubsub

@@ -44,10 +44,12 @@ services:
     image: bruceoutdoor/kafpubsub
     networks:
       - dbz-net
-    command: python kafpubsub.py --bootstrap-server kafka:9092 --topic dbserver1.inventory.customers
     environment:
       - PUBSUB_EMULATOR_HOST=pubsub:8085
-      - LOGLEVEL=DEBUG
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - INPUT_TOPIC=dbserver1.inventory.customers
+      - PROJECT_ID=crafty-apex-264713
+      - AUTO_OFFSET_RESET_CONFIG=latest
 
   # ** Here on are outside the debezium setup **
   postgres:
