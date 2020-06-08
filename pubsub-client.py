@@ -6,13 +6,14 @@ import json
 subscriber = pubsub.SubscriberClient()
 
 def comsume_message(msg):
-    val = msg.data.decode('utf-8')
+    print(msg)
+    # val = msg.data
 
-    try:
-        val = json.loads(val)
-        print(f'Payload: {val}\n')
-    except json.decoder.JSONDecodeError:
-        print(f'Invalid json: {val}\n')
+    # try:
+    #     val = json.loads(val)
+    #     print(f'Payload: {val}\n')
+    # except json.decoder.JSONDecodeError:
+    #     print(f'Invalid json: {val}\n')
 
 if __name__ == '__main__':
     project = 'crafty-apex-264713'
