@@ -1,6 +1,6 @@
 # Postgres to BigQuery CDC Pipeline Example
 
-A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Dataflow+Python.
+A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Avro, Dataflow+Python.
 
 ## TODO
 
