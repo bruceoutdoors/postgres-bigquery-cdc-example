@@ -1,6 +1,8 @@
 # KafPubSub Image
 
-Connects kafka with pubsub using a small [python script](./kafpubsub.py). It may be a better to use a proper connector like [CloudPubSubConnector](https://github.com/GoogleCloudPlatform/pubsub/tree/master/kafka-connector), but this is what I got working.
+Connects kafka with pubsub using a small streams app via Kafka Streams API.
+
+Alternatively you can consider using a more low level connector API using [CloudPubSubConnector](https://github.com/GoogleCloudPlatform/pubsub/tree/master/kafka-connector).
 
 **This is totally experimental and you should not be using this in production.**
 
@@ -23,6 +25,26 @@ docker build . -t bruceoutdoor/kafpubsub
 ```
 
 ## Usage
+
+### Java Jar
+
+You need to set environment variables to configure this:
+
+Required:
+
+ - `BOOTSTRAP_SERVERS` - kafka bootstrap servers. Defaults to `localhost:9092`
+ - `INPUT_TOPIC` - kafka topic; same name will be used to pubsub topic.
+ - `PROJECT_ID` - GCP project ID
+ - `APPLICATION_ID` - Consumer identity. Defaults to `kafpubsub`.
+ - `AUTO_OFFSET_RESET_CONFIG` - Action to take when there is no initial offset in offset store or the desired offset is out of range. Defaults to `latest`.
+
+Used for testing only:
+
+ - `PUBSUB_EMULATOR_HOST` - set pubsub emulator endpoint. Not set by default.
+
+### Python Script [OBSOLETE]
+
+**This is no longer used.** But I'm just leaving it here cause it I like this script (:
 
 Refer [docker-compose.yaml](../docker-compose.yaml) in postgres-bigquery-cdc-example:
 
