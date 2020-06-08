@@ -1,8 +1,11 @@
 package bruceoutdoors.kafpubsub;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.GrpcTransportChannel;
@@ -13,6 +16,9 @@ import com.google.cloud.pubsub.v1.TopicAdminSettings;
 import com.google.pubsub.v1.TopicName;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.ManagedChannel;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.KafkaStreams;
@@ -37,6 +43,9 @@ public class App {
         props.put(StreamsConfig.APPLICATION_ID_CONFIG, System.getenv().getOrDefault("APPLICATION_ID", "kafpubsub"));
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, System.getenv().getOrDefault("BOOTSTRAP_SERVERS", "localhost:9092"));
         props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0);
+        props.put(StreamsConfig.REQUEST_TIMEOUT_MS_CONFIG, 9999999);
+        props.put(StreamsConfig.RETRY_BACKOFF_MS_CONFIG, 5000);
+        props.put(StreamsConfig.RETRIES_CONFIG, 9999999);
         props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.ByteArray().getClass().getName());
         props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.ByteArray().getClass().getName());
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, System.getenv().getOrDefault("AUTO_OFFSET_RESET_CONFIG", "latest"));
@@ -76,10 +85,20 @@ public class App {
         return publisher;
     }
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws IOException, ExecutionException, InterruptedException {
         final Publisher publisher = initPubSubPub();
 
         final Properties props = getStreamsConfig();
+
+       AdminClient kafkaAdminClient = KafkaAdminClient.create(props);
+       Boolean isTopicExist = kafkaAdminClient.listTopics().names().get().contains(INPUT_TOPIC);
+       if (!isTopicExist) {
+           Collection<NewTopic> topicList = new ArrayList<NewTopic>();
+           topicList.add(new NewTopic(INPUT_TOPIC, 1, (short) 1));
+           kafkaAdminClient.createTopics(topicList).all().get();
+           log.info("Kafka Topic created: " + INPUT_TOPIC);
+       }
+
         final StreamsBuilder builder = new StreamsBuilder();
         final KStream<byte[], byte[]> source = builder.stream(INPUT_TOPIC);
 
@@ -95,19 +114,17 @@ public class App {
         final CountDownLatch latch = new CountDownLatch(1);
 
         // attach shutdown handler to catch control-c
-        Runtime.getRuntime().addShutdownHook(new Thread("streams-wordcount-shutdown-hook") {
-            @Override
-            public void run() {
-                streams.close();
-                latch.countDown();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            streams.close();
+            latch.countDown();
+        }));
 
         try {
             log.info("Publish Kafka values to pubsub...");
             streams.start();
             latch.await();
         } catch (final Throwable e) {
+            log.error("KafPubSub Premature Termination!", e);
             System.exit(1);
         }
         System.exit(0);
