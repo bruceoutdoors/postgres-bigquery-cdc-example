@@ -13,6 +13,8 @@ export PUBSUB_EMULATOR_HOST=localhost:8085
 
 mvn exec:java -Dexec.args="xxx" # quick run
 mvn package   # build jar
+
+java -jar target/kafpubsub.jar # run jar
 ```
 
 
