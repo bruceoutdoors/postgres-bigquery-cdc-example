@@ -86,7 +86,9 @@ public class App {
 
         source.foreach((k, v) -> {
             final ByteString kafkaVal = ByteString.copyFrom(v);
-            final PubsubMessage msg = PubsubMessage.newBuilder().setData(kafkaVal).build();
+            final PubsubMessage msg = PubsubMessage.newBuilder()
+                                                   .setData(kafkaVal)
+                                                   .build();
             publisher.publish(msg);
         });
 
