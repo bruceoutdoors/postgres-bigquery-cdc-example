@@ -8,6 +8,9 @@ Connects kafka with pubsub using a small [python script](./kafpubsub.py). It may
 
 
 ```sh
+# Set env for pubsub to run locally
+export PUBSUB_EMULATOR_HOST=localhost:8085
+
 mvn exec:java -Dexec.args="xxx" # quick run
 mvn package   # build jar
 ```

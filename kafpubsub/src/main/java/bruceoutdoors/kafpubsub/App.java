@@ -9,6 +9,7 @@ import com.google.api.gax.grpc.GrpcTransportChannel;
 import com.google.api.gax.rpc.FixedTransportChannelProvider;
 import com.google.api.gax.rpc.TransportChannelProvider;
 import com.google.cloud.pubsub.v1.TopicAdminClient;
+import com.google.cloud.pubsub.v1.TopicAdminSettings;
 import com.google.pubsub.v1.TopicName;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.ManagedChannel;
@@ -21,9 +22,10 @@ import org.apache.kafka.streams.kstream.KStream;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
+import com.google.api.gax.rpc.AlreadyExistsException;
 
 public class App {
-    public static final String INPUT_TOPIC = "streams-plaintext-input";
+    public static final String INPUT_TOPIC = "dbserver1.inventory.customers";
     public static final String PROJECT_ID = "crafty-apex-264713";
 
     static Properties getStreamsConfig() {
@@ -42,10 +44,10 @@ public class App {
         return props;
     }
 
-    public static void main(String[] args) throws IOException
-    {
+    public static Publisher initPubSubPub() throws IOException {
         TopicName topic = TopicName.of(PROJECT_ID, INPUT_TOPIC);
         Publisher.Builder pubBuilder = Publisher.newBuilder(topic);
+        TopicAdminClient topicAdminClient;
 
         String emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST");
         if (emulatorHost != null) {
@@ -56,12 +58,32 @@ public class App {
                     FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
             pubBuilder.setChannelProvider(channelProvider)
                     .setCredentialsProvider(NoCredentialsProvider.create());
+
+            topicAdminClient = TopicAdminClient.create(
+                    TopicAdminSettings.newBuilder()
+                                      .setTransportChannelProvider(channelProvider)
+                                      .setCredentialsProvider(NoCredentialsProvider.create())
+                                      .build()
+                    );
+        } else {
+            topicAdminClient = TopicAdminClient.create();
         }
 
         final Publisher publisher = pubBuilder.build();
 
-        TopicAdminClient topicAdminClient = TopicAdminClient.create();
-        topicAdminClient.createTopic(topic);
+        try {
+            topicAdminClient.createTopic(topic);
+            System.out.println("PubSub Topic created: " + topic.getTopic());
+        } catch (AlreadyExistsException e) {
+            System.out.println("Topic \"" + topic.getTopic() + "\" already exists. Skipping creation.");
+        }
+
+        return publisher;
+    }
+
+    public static void main(String[] args) throws IOException
+    {
+        Publisher publisher = initPubSubPub();
 
         final Properties props = getStreamsConfig();
         final StreamsBuilder builder = new StreamsBuilder();
@@ -80,13 +102,13 @@ public class App {
         Runtime.getRuntime().addShutdownHook(new Thread("streams-wordcount-shutdown-hook") {
             @Override
             public void run() {
-                System.out.println("Publish Kafka values to pubsub...");
                 streams.close();
                 latch.countDown();
             }
         });
 
         try {
+            System.out.println("Publish Kafka values to pubsub...");
             streams.start();
             latch.await();
         } catch (final Throwable e) {
