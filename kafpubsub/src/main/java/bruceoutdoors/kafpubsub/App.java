@@ -45,26 +45,22 @@ public class App {
     }
 
     public static Publisher initPubSubPub() throws IOException {
-        TopicName topic = TopicName.of(PROJECT_ID, INPUT_TOPIC);
-        Publisher.Builder pubBuilder = Publisher.newBuilder(topic);
+        final TopicName topic = TopicName.of(PROJECT_ID, INPUT_TOPIC);
+        final Publisher.Builder pubBuilder = Publisher.newBuilder(topic);
         TopicAdminClient topicAdminClient;
 
-        String emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST");
+        final String emulatorHost = System.getenv("PUBSUB_EMULATOR_HOST");
         if (emulatorHost != null) {
-            ManagedChannel channel = ManagedChannelBuilder.forTarget(emulatorHost)
-                    .usePlaintext()
-                    .build();
-            TransportChannelProvider channelProvider =
-                    FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
+            final ManagedChannel channel = ManagedChannelBuilder.forTarget(emulatorHost)
+                                                                .usePlaintext()
+                                                                .build();
+            final TransportChannelProvider channelProvider = FixedTransportChannelProvider.create(GrpcTransportChannel.create(channel));
             pubBuilder.setChannelProvider(channelProvider)
-                    .setCredentialsProvider(NoCredentialsProvider.create());
-
-            topicAdminClient = TopicAdminClient.create(
-                    TopicAdminSettings.newBuilder()
-                                      .setTransportChannelProvider(channelProvider)
-                                      .setCredentialsProvider(NoCredentialsProvider.create())
-                                      .build()
-                    );
+                      .setCredentialsProvider(NoCredentialsProvider.create());
+            topicAdminClient = TopicAdminClient.create(TopicAdminSettings.newBuilder()
+                                                                         .setTransportChannelProvider(channelProvider)
+                                                                         .setCredentialsProvider(NoCredentialsProvider.create())
+                                                                         .build());
         } else {
             topicAdminClient = TopicAdminClient.create();
         }
@@ -74,24 +70,23 @@ public class App {
         try {
             topicAdminClient.createTopic(topic);
             System.out.println("PubSub Topic created: " + topic.getTopic());
-        } catch (AlreadyExistsException e) {
+        } catch (final AlreadyExistsException e) {
             System.out.println("Topic \"" + topic.getTopic() + "\" already exists. Skipping creation.");
         }
 
         return publisher;
     }
 
-    public static void main(String[] args) throws IOException
-    {
-        Publisher publisher = initPubSubPub();
+    public static void main(final String[] args) throws IOException {
+        final Publisher publisher = initPubSubPub();
 
         final Properties props = getStreamsConfig();
         final StreamsBuilder builder = new StreamsBuilder();
         final KStream<byte[], byte[]> source = builder.stream(INPUT_TOPIC);
 
         source.foreach((k, v) -> {
-            ByteString kafkaVal = ByteString.copyFrom(v);
-            PubsubMessage msg = PubsubMessage.newBuilder().setData(kafkaVal).build();
+            final ByteString kafkaVal = ByteString.copyFrom(v);
+            final PubsubMessage msg = PubsubMessage.newBuilder().setData(kafkaVal).build();
             publisher.publish(msg);
         });
 
