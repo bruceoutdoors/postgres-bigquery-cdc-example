@@ -6,6 +6,13 @@ Connects kafka with pubsub using a small [python script](./kafpubsub.py). It may
 
 ## Build
 
+
+```sh
+mvn exec:java -Dexec.args="xxx" # quick run
+mvn package   # build jar
+```
+
+
 ```sh
 docker build . -t bruceoutdoor/kafpubsub
 ```
