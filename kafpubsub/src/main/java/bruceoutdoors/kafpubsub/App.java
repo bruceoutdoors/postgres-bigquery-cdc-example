@@ -29,6 +29,7 @@ import com.google.cloud.pubsub.v1.Publisher;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
 import com.google.api.gax.rpc.AlreadyExistsException;
+import org.apache.kafka.common.errors.TopicExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,8 +96,22 @@ public class App {
        if (!isTopicExist) {
            Collection<NewTopic> topicList = new ArrayList<NewTopic>();
            topicList.add(new NewTopic(INPUT_TOPIC, 1, (short) 1));
-           kafkaAdminClient.createTopics(topicList).all().get();
-           log.info("Kafka Topic created: " + INPUT_TOPIC);
+
+/* Only happening in GCP:...
+kafpubsub_1        | Exception in thread "main" java.util.concurrent.ExecutionException: org.apache.kafka.common.errors.TopicExistsException: Topic 'dbserver1.inventory.customers' already exists.
+kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.wrapAndThrow(KafkaFutureImpl.java:45)
+kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.access$000(KafkaFutureImpl.java:32)
+kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl$SingleWaiter.await(KafkaFutureImpl.java:89)
+kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.get(KafkaFutureImpl.java:260)
+kafpubsub_1        |    at bruceoutdoors.kafpubsub.App.main(App.java:101)
+kafpubsub_1        | Caused by: org.apache.kafka.common.errors.TopicExistsException: Topic 'dbserver1.inventory.customers' already exists.
+*/
+           try {
+               kafkaAdminClient.createTopics(topicList).all().get();
+               log.info("Kafka Topic created: " + INPUT_TOPIC);
+           } catch (ExecutionException e) {
+               log.info("Kafka Topic already created but tried to be created again: " + INPUT_TOPIC);
+           }
        }
 
         final StreamsBuilder builder = new StreamsBuilder();

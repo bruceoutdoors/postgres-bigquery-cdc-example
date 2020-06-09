@@ -4,17 +4,16 @@ import apache_beam as beam
 from apache_beam import window
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
+from simple_avro_deserializer import SimpleAvroDeserializer
 import logging
 from datetime import date
 
-# it's not as complicated as it sounds
+serialize = SimpleAvroDeserializer('http://localhost:8081')
+
 def json_to_row(msg):
-    dat = msg.decode('utf-8')
+    dat = serialize(msg)
     logging.info(f'Payload: {dat}')
-    return {
-        'insert_date': date.today(),
-        'json_dat': dat,
-    }
+    return dat
 
 def run(argv=None, save_main_session=True):
     """Main entry point; defines and runs the wordcount pipeline."""
@@ -52,7 +51,13 @@ def run(argv=None, save_main_session=True):
               | 'Write to BigQuery' >>
                     WriteToBigQuery(
                         'crafty-apex-264713:inventory.customers',
-                        schema='insert_date:DATETIME, json_dat:STRING',
+                        schema='id:INT64,' \
+                               'first_name:STRING,' \
+                               'last_time:STRING,' \
+                               'email:STRING,' \
+                               '__op:STRING,' \
+                               '__source_ts_ms:INT64,' \
+                               '__lsn:INT64',
                         create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=BigQueryDisposition.WRITE_APPEND
                     )
