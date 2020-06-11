@@ -3,9 +3,11 @@ package bruceoutdoors.kafpubsub;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.GrpcTransportChannel;
@@ -85,19 +87,22 @@ public class App {
         return publisher;
     }
 
-    public static void main(final String[] args) throws IOException, ExecutionException, InterruptedException {
+    public static void main(final String[] args) throws IOException, InterruptedException {
         final Publisher publisher = initPubSubPub();
 
         final Properties props = getStreamsConfig();
 
        AdminClient kafkaAdminClient = KafkaAdminClient.create(props);
-       Boolean isTopicExist = kafkaAdminClient.listTopics().names().get().contains(INPUT_TOPIC);
-       if (!isTopicExist) {
-           Collection<NewTopic> topicList = new ArrayList<NewTopic>();
-           topicList.add(new NewTopic(INPUT_TOPIC, 1, (short) 1));
-           kafkaAdminClient.createTopics(topicList).all().get();
-           log.info("Kafka Topic created: " + INPUT_TOPIC);
-       }
+
+        try {
+            Boolean isTopicExist = kafkaAdminClient.listTopics().names().get().contains(INPUT_TOPIC);
+            if (!isTopicExist) {
+               kafkaAdminClient.createTopics(Collections.singletonList(new NewTopic(INPUT_TOPIC, 1, (short) 1))).all().get();
+               log.info("Kafka Topic created: " + INPUT_TOPIC);
+           }
+        } catch (ExecutionException e) {
+            log.info("Some innocent error happened when creating Kafka Topic: " + INPUT_TOPIC);
+        }
 
         final StreamsBuilder builder = new StreamsBuilder();
         final KStream<byte[], byte[]> source = builder.stream(INPUT_TOPIC);
