@@ -3,9 +3,11 @@ package bruceoutdoors.kafpubsub;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Pattern;
 
 import com.google.api.gax.core.NoCredentialsProvider;
 import com.google.api.gax.grpc.GrpcTransportChannel;
@@ -86,33 +88,22 @@ public class App {
         return publisher;
     }
 
-    public static void main(final String[] args) throws IOException, ExecutionException, InterruptedException {
+    public static void main(final String[] args) throws IOException, InterruptedException {
         final Publisher publisher = initPubSubPub();
 
         final Properties props = getStreamsConfig();
 
        AdminClient kafkaAdminClient = KafkaAdminClient.create(props);
-       Boolean isTopicExist = kafkaAdminClient.listTopics().names().get().contains(INPUT_TOPIC);
-       if (!isTopicExist) {
-           Collection<NewTopic> topicList = new ArrayList<NewTopic>();
-           topicList.add(new NewTopic(INPUT_TOPIC, 1, (short) 1));
 
-/* Only happening in GCP:...
-kafpubsub_1        | Exception in thread "main" java.util.concurrent.ExecutionException: org.apache.kafka.common.errors.TopicExistsException: Topic 'dbserver1.inventory.customers' already exists.
-kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.wrapAndThrow(KafkaFutureImpl.java:45)
-kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.access$000(KafkaFutureImpl.java:32)
-kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl$SingleWaiter.await(KafkaFutureImpl.java:89)
-kafpubsub_1        |    at org.apache.kafka.common.internals.KafkaFutureImpl.get(KafkaFutureImpl.java:260)
-kafpubsub_1        |    at bruceoutdoors.kafpubsub.App.main(App.java:101)
-kafpubsub_1        | Caused by: org.apache.kafka.common.errors.TopicExistsException: Topic 'dbserver1.inventory.customers' already exists.
-*/
-           try {
-               kafkaAdminClient.createTopics(topicList).all().get();
+        try {
+            Boolean isTopicExist = kafkaAdminClient.listTopics().names().get().contains(INPUT_TOPIC);
+            if (!isTopicExist) {
+               kafkaAdminClient.createTopics(Collections.singletonList(new NewTopic(INPUT_TOPIC, 1, (short) 1))).all().get();
                log.info("Kafka Topic created: " + INPUT_TOPIC);
-           } catch (ExecutionException e) {
-               log.info("Kafka Topic already created but tried to be created again: " + INPUT_TOPIC);
            }
-       }
+        } catch (ExecutionException e) {
+            log.info("Some innocent error happened when creating Kafka Topic: " + INPUT_TOPIC);
+        }
 
         final StreamsBuilder builder = new StreamsBuilder();
         final KStream<byte[], byte[]> source = builder.stream(INPUT_TOPIC);
