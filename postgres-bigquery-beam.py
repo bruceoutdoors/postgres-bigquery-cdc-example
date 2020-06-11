@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 import argparse
 import apache_beam as beam
-from apache_beam import window
+from apache_beam.transforms import window
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
 from simple_avro_deserializer import SimpleAvroDeserializer
@@ -46,7 +46,7 @@ def run(argv=None, save_main_session=True):
     with beam.Pipeline(options=pipeline_options) as p:
         (
             p | 'Read from PubSub' >>
-                    beam.io.ReadFromPubSub(subscription='projects/crafty-apex-264713/subscriptions/peanut')
+                    ReadFromPubSub(topic=pubsub_topic)
               | '2 Second Window' >>
                     beam.WindowInto(window.FixedWindows(2))
               | 'Json -> Row' >>
