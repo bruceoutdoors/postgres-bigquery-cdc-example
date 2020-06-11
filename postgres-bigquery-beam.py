@@ -8,10 +8,13 @@ from simple_avro_deserializer import SimpleAvroDeserializer
 import logging
 from datetime import date
 
-serialize = SimpleAvroDeserializer('http://localhost:8081')
+serialize = SimpleAvroDeserializer('http://10.140.0.4:8081')
 
 def json_to_row(msg):
-    dat = serialize(msg)
+    try:
+        dat = serialize(msg)
+    except Exception as e:
+        logging.warn(f'Serialize Error! ({e}) - Payload: {msg}')
     logging.info(f'Payload: {dat}')
     return dat
 
@@ -43,7 +46,7 @@ def run(argv=None, save_main_session=True):
     with beam.Pipeline(options=pipeline_options) as p:
         (
             p | 'Read from PubSub' >>
-                    beam.io.ReadFromPubSub(topic=pubsub_topic)
+                    beam.io.ReadFromPubSub(subscription='projects/crafty-apex-264713/subscriptions/peanut')
               | '2 Second Window' >>
                     beam.WindowInto(window.FixedWindows(2))
               | 'Json -> Row' >>
