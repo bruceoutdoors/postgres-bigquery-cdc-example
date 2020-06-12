@@ -37,6 +37,11 @@ curl -H "Accept:application/json" localhost:8083/connectors/
 # See inventory customer schema in connector
 curl -sH "Accept:application/json" localhost:8083/connectors/inventory-connector | jq
 
+# See customer schema in schema registry
+curl -sX GET http://localhost:8081/subjects/dbserver1.inventory.customers-value/versions/1 | jq '.schema | fromjson'
+# See schema from registry from global id
+curl -sX GET http://localhost:8081/schemas/ids/1 | jq  '.schema | fromjson'
+
 # Access postgres database
 psql postgresql://postgres:postgres@localhost:5432/postgres
 # ...you can also access from within the docker container
@@ -57,6 +62,10 @@ python pubsub-client.py
 
 # -----------------------------------------------------------------------------------
 
+# Direct Runner (You may want to comment out BigQuery task)
+python postgres-bigquery-beam.py \
+    --project crafty-apex-264713
+
 # Run in job in Dataflow:
 python postgres-bigquery-beam.py \
     --runner DataflowRunner \
@@ -64,7 +73,7 @@ python postgres-bigquery-beam.py \
     --region asia-east1 \
     --temp_location gs://kakfa-testing-bucket/tmp \
     --staging_location gs://kakfa-testing-bucket/staging \
-    --streaming \
+    --schema-registry 'http://10.140.0.4:8081' \
     --requirements_file dataflow-requirements.txt
 
 ```
