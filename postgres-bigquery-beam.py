@@ -17,10 +17,10 @@ def avro_to_row(schema_registry):
             dat = serialize(msg)
         except Exception as e:
             logging.warning(f'Serialize Error! ({e}) - Payload: {msg}')
-            return
+            return []
 
         logging.info(f'Payload: {dat}')
-        return dat
+        return [dat]
 
     return convert
 
