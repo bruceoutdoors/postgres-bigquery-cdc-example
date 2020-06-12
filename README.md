@@ -9,7 +9,7 @@ A CDC pipeline that streams postgres database table changes to BigQuery via Debe
 ## Quickstart
 
 ```sh
-# Python 3.8 is not supported in Beam 2.21. To install Python 3.7 in Ubuntu 20.04 you can do:
+# Python 3.8 is not supported in Beam 2.21 and Dataflow. To install Python 3.7 in Ubuntu 20.04 you can do:
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install python3.7
@@ -53,6 +53,20 @@ export PUBSUB_EMULATOR_HOST=localhost:8085
 
 # Start pubsub client
 python pubsub-client.py
+
+
+# -----------------------------------------------------------------------------------
+
+# Run in job in Dataflow:
+python postgres-bigquery-beam.py \
+    --runner DataflowRunner \
+    --project crafty-apex-264713 \
+    --region asia-east1 \
+    --temp_location gs://kakfa-testing-bucket/tmp \
+    --staging_location gs://kakfa-testing-bucket/staging \
+    --streaming \
+    --requirements_file dataflow-requirements.txt
+
 ```
 
 ## Helpful References

@@ -1,20 +1,22 @@
 from __future__ import absolute_import
 import argparse
 import apache_beam as beam
-from apache_beam import window
+from apache_beam.transforms import window
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
+from simple_avro_deserializer import SimpleAvroDeserializer
 import logging
 from datetime import date
 
-# it's not as complicated as it sounds
+serialize = SimpleAvroDeserializer('http://10.140.0.4:8081')
+
 def json_to_row(msg):
-    dat = msg.decode('utf-8')
+    try:
+        dat = serialize(msg)
+    except Exception as e:
+        logging.warn(f'Serialize Error! ({e}) - Payload: {msg}')
     logging.info(f'Payload: {dat}')
-    return {
-        'insert_date': date.today(),
-        'json_dat': dat,
-    }
+    return dat
 
 def run(argv=None, save_main_session=True):
     """Main entry point; defines and runs the wordcount pipeline."""
@@ -44,7 +46,7 @@ def run(argv=None, save_main_session=True):
     with beam.Pipeline(options=pipeline_options) as p:
         (
             p | 'Read from PubSub' >>
-                    beam.io.ReadFromPubSub(topic=pubsub_topic)
+                    ReadFromPubSub(topic=pubsub_topic)
               | '2 Second Window' >>
                     beam.WindowInto(window.FixedWindows(2))
               | 'Json -> Row' >>
@@ -52,7 +54,13 @@ def run(argv=None, save_main_session=True):
               | 'Write to BigQuery' >>
                     WriteToBigQuery(
                         'crafty-apex-264713:inventory.customers',
-                        schema='insert_date:DATETIME, json_dat:STRING',
+                        schema='id:INT64,' \
+                               'first_name:STRING,' \
+                               'last_time:STRING,' \
+                               'email:STRING,' \
+                               '__op:STRING,' \
+                               '__source_ts_ms:INT64,' \
+                               '__lsn:INT64',
                         create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=BigQueryDisposition.WRITE_APPEND
                     )
