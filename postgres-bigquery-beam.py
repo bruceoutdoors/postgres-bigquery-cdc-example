@@ -6,27 +6,32 @@ from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, 
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
 from simple_avro_deserializer import SimpleAvroDeserializer
 import logging
-from datetime import date
 
-serialize = SimpleAvroDeserializer('http://10.140.0.4:8081')
 
-def json_to_row(msg):
-    try:
-        dat = serialize(msg)
-    except Exception as e:
-        logging.warn(f'Serialize Error! ({e}) - Payload: {msg}')
-    logging.info(f'Payload: {dat}')
-    return dat
+def avro_to_row(schema_registry):
+    serialize = SimpleAvroDeserializer(schema_registry)
+
+    def convert(msg):
+        try:
+            dat = serialize(msg)
+        except Exception as e:
+            logging.warning(f'Serialize Error! ({e}) - Payload: {msg}')
+            return
+
+        logging.info(f'Payload: {dat}')
+        return dat
+
+    return convert
 
 def run(argv=None, save_main_session=True):
     """Main entry point; defines and runs the wordcount pipeline."""
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--output',
-        dest='output',
-        default='output.txt',
-        help='Output file to write results to.')
+        '--schema-registry',
+        dest='schema_registry',
+        default='http://127.0.0.1:8081',
+        help='Schema registry endpoint. Defaults to local endpoint.')
     known_args, pipeline_args = parser.parse_known_args(argv)
     pipeline_args.extend([
         '--job_name=dbz-test-example',
@@ -49,17 +54,17 @@ def run(argv=None, save_main_session=True):
                     ReadFromPubSub(topic=pubsub_topic)
               | '2 Second Window' >>
                     beam.WindowInto(window.FixedWindows(2))
-              | 'Json -> Row' >>
-                    beam.FlatMap(json_to_row)
+              | 'Avro to Row' >>
+                    beam.FlatMap(avro_to_row(known_args.schema_registry))
               | 'Write to BigQuery' >>
                     WriteToBigQuery(
                         'crafty-apex-264713:inventory.customers',
-                        schema='id:INT64,' \
-                               'first_name:STRING,' \
-                               'last_time:STRING,' \
-                               'email:STRING,' \
-                               '__op:STRING,' \
-                               '__source_ts_ms:INT64,' \
+                        schema='id:INT64,'
+                               'first_name:STRING,'
+                               'last_time:STRING,'
+                               'email:STRING,'
+                               '__op:STRING,'
+                               '__source_ts_ms:INT64,'
                                '__lsn:INT64',
                         create_disposition=BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=BigQueryDisposition.WRITE_APPEND
