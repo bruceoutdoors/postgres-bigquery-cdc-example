@@ -27,6 +27,7 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.coders.AvroCoder
+import org.apache.beam.sdk.io.TextIO
 import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.options.*
@@ -34,6 +35,7 @@ import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
 import org.apache.beam.sdk.transforms.windowing.Window
 import org.apache.beam.sdk.values.KV
+import org.apache.beam.sdk.values.TypeDescriptor
 import org.apache.kafka.common.serialization.Deserializer
 import org.joda.time.Duration
 import java.io.IOException
@@ -48,7 +50,6 @@ object PostgresCDCBigQuery {
         var inputFile: String
 
         @get:Description("Path of the file to write to")
-        @get:Validation.Required
         var output: String
     }
 
@@ -68,7 +69,6 @@ object PostgresCDCBigQuery {
     @Throws(IOException::class)
     @JvmStatic
     fun runPipeline(options: Options) {
-        val output = options.output
         val p = Pipeline.create(options)
 
         val tableSpec: TableReference = TableReference()
@@ -101,7 +101,7 @@ object PostgresCDCBigQuery {
         ))
 
 
-        p.apply("Read from Kafka",
+        var tableData = p.apply("Read from Kafka",
                 KafkaIO.read<ByteArray, GenericRecord>()
                         .withBootstrapServers("localhost:9092")
                         .withTopic("dbserver1.inventory.customers")
@@ -113,13 +113,23 @@ object PostgresCDCBigQuery {
                 Window.into<KV<ByteArray, GenericRecord>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
         ).apply("Avro to Row",
                 MapElements.via(AvroToRow())
-        ).apply("Write to BigQuery",
-                BigQueryIO.writeTableRows()
-                        .to(tableSpec)
-                        .withSchema(tableSchema)
-                        .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                        .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE)
         )
+
+        if (options.output == null) {
+            tableData.apply("Write to BigQuery",
+                    BigQueryIO.writeTableRows()
+                            .to(tableSpec)
+                            .withSchema(tableSchema)
+                            .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                            .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE)
+            )
+        } else {
+            tableData.apply("Write To File (Testing Only)",
+                    MapElements.into(TypeDescriptor.of(String::class.java))
+                            .via(ProcessFunction<TableRow, String> { input -> input.toPrettyString() })
+                            .apply { TextIO.write().to(options.output) }
+            )
+        }
 
         p.run().waitUntilFinish()
     }
