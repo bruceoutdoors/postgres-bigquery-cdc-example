@@ -16,10 +16,10 @@ def avro_to_row(schema_registry):
             dat = serialize(msg)
         except Exception as e:
             logging.warning(f'Serialize Error! ({e}) - Payload: {msg}')
-            return
+            return []
 
         logging.info(f'Payload: {dat}')
-        return dat
+        return [dat]
 
     return convert
 
@@ -56,6 +56,8 @@ def run(argv=None, save_main_session=True):
                     beam.WindowInto(window.FixedWindows(2))
               | 'Avro to Row' >>
                     beam.FlatMap(avro_to_row(known_args.schema_registry))
+            #   | 'Write to File' >>
+            #         beam.io.WriteToText('args.output')
               | 'Write to BigQuery' >>
                     WriteToBigQuery(
                         'crafty-apex-264713:inventory.customers',
