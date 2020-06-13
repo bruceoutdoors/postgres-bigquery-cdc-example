@@ -60,13 +60,33 @@ export PUBSUB_EMULATOR_HOST=localhost:8085
 python pubsub-client.py
 
 
-# -----------------------------------------------------------------------------------
+# Kotlin ----------------------------------------------------------------------------
+
+# Direct Runner
+mvn compile exec:java \
+    -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
+    -Dexec.args="--project crafty-apex-264713
+                " 
+
+# Dataflow Runner
+mvn compile exec:java \
+    -P dataflow-runner \
+    -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
+    -Dexec.args="--project crafty-apex-264713 \
+                 --region asia-east1 \
+                 --temp_location gs://kakfa-testing-bucket/tmp \
+                 --staging_location gs://kakfa-testing-bucket/staging \
+                 --schema-registry 'http://10.140.0.4:8081' \
+                 --requirements_file dataflow-requirements.txt
+                " 
+
+# Python -----------------------------------------------------------------------------
 
 # Direct Runner (You may want to comment out BigQuery task)
 python postgres-bigquery-beam.py \
     --project crafty-apex-264713
 
-# Run in job in Dataflow:
+# Run in job in Dataflow (can't get this to work...):
 python postgres-bigquery-beam.py \
     --runner DataflowRunner \
     --project crafty-apex-264713 \
