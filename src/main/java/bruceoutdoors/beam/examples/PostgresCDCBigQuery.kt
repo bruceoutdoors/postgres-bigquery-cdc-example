@@ -17,13 +17,18 @@
  */
 package bruceoutdoors.beam.examples
 
-import avro.shaded.com.google.common.collect.ImmutableList
-import avro.shaded.com.google.common.collect.ImmutableMap
+import com.google.api.services.bigquery.model.TableFieldSchema
+import com.google.api.services.bigquery.model.TableReference
+import com.google.api.services.bigquery.model.TableRow
+import com.google.api.services.bigquery.model.TableSchema
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableMap
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.coders.AvroCoder
 import org.apache.beam.sdk.io.kafka.KafkaIO
+import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.options.*
 import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
@@ -112,8 +117,8 @@ object PostgresCDCBigQuery {
                 BigQueryIO.writeTableRows()
                         .to(tableSpec)
                         .withSchema(tableSchema)
-                        .withCreateDisposition(CreateDisposition.CREATE_IF_NEEDED)
-                        .withWriteDisposition(WriteDisposition.WRITE_TRUNCATE)
+                        .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
+                        .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE)
         )
 
         p.run().waitUntilFinish()
