@@ -21,13 +21,10 @@ import avro.shaded.com.google.common.collect.ImmutableMap
 import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.options.*
-import org.apache.beam.sdk.transforms.DoFn
-import org.apache.beam.sdk.transforms.PTransform
-import org.apache.beam.sdk.transforms.ParDo
+import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
 import org.apache.beam.sdk.transforms.windowing.Window
 import org.apache.beam.sdk.values.KV
-import org.apache.beam.sdk.values.PCollection
 import org.joda.time.Duration
 import java.io.IOException
 
@@ -44,22 +41,15 @@ object PostgresCDCBigQuery {
         var output: String
     }
 
-    class avroToRowFn : DoFn<KV<ByteArray, ByteArray>, String>() {
-        @ProcessElement
-        fun processElement(@Element element: KV<ByteArray, ByteArray>, receiver: DoFn.OutputReceiver<String>) {
-            receiver.output(element.key.toString())
-        }
-    }
-
-    class avroToRow : PTransform<PCollection<KV<ByteArray, ByteArray>>, PCollection<String>>() {
-        override fun expand(input: PCollection<KV<ByteArray, ByteArray>>): PCollection<String> {
-            return input.apply(ParDo.of(avroToRowFn()))
+    class AvroToRow : InferableFunction<KV<ByteArray, ByteArray>, List<String>>() {
+        override fun apply(line : KV<ByteArray, ByteArray>) : List<String> {
+            return line.key.toString().split("jkd").toList()
         }
     }
 
     @Throws(IOException::class)
     @JvmStatic
-    fun runWindowedWordCount(options: Options) {
+    fun runPipeline(options: Options) {
         val output = options.output
         val p = Pipeline.create(options)
 
@@ -70,9 +60,9 @@ object PostgresCDCBigQuery {
                         .updateConsumerProperties(ImmutableMap.of("auto.offset.reset", "earliest") as Map<String, Any>?)
                         .withoutMetadata()
         ).apply("2 Second Window",
-                Window.into(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
+                Window.into<KV<ByteArray, ByteArray>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
         ).apply("Avro to Row",
-                avroToRow()
+                FlatMapElements.via(AvroToRow())
         )
 
         p.run().waitUntilFinish()
@@ -82,6 +72,6 @@ object PostgresCDCBigQuery {
     @JvmStatic
     fun main(args: Array<String>) {
         val options = PipelineOptionsFactory.fromArgs(*args).withValidation().`as`(Options::class.java)
-        runWindowedWordCount(options)
+        runPipeline(options)
     }
 }
