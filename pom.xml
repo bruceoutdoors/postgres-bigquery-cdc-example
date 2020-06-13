@@ -63,6 +63,10 @@
         <enabled>true</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>confluent</id>
+      <url>http://packages.confluent.io/maven/</url>
+    </repository>
   </repositories>
 
   <build>
@@ -212,6 +216,21 @@
           <artifactId>beam-sdks-java-io-kafka</artifactId>
           <version>${beam.version}</version>
         </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-avro-serializer</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-schema-registry</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.beam</groupId>
+          <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+          <version>2.22.0</version>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -233,6 +252,21 @@
           <artifactId>beam-sdks-java-io-kafka</artifactId>
           <version>${beam.version}</version>
         </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-avro-serializer</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-schema-registry</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.beam</groupId>
+          <artifactId>beam-sdks-java-io-google-cloud-platform</artifactId>
+          <version>2.22.0</version>
+        </dependency>
       </dependencies>
     </profile>
 
@@ -250,6 +284,16 @@
           <groupId>org.apache.beam</groupId>
           <artifactId>beam-sdks-java-io-kafka</artifactId>
           <version>${beam.version}</version>
+        </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-avro-serializer</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-schema-registry</artifactId>
+          <version>5.5.0</version>
         </dependency>
       </dependencies>
     </profile>
@@ -272,12 +316,32 @@
           <artifactId>beam-sdks-java-io-kafka</artifactId>
           <version>${beam.version}</version>
         </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-avro-serializer</artifactId>
+          <version>5.5.0</version>
+        </dependency>
+        <dependency>
+          <groupId>io.confluent</groupId>
+          <artifactId>kafka-schema-registry</artifactId>
+          <version>5.5.0</version>
+        </dependency>
       </dependencies>
     </profile>
 
   </profiles>
 
   <dependencies>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-avro-serializer</artifactId>
+      <version>5.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>io.confluent</groupId>
+      <artifactId>kafka-schema-registry</artifactId>
+      <version>5.5.0</version>
+    </dependency>
     <!-- Adds a dependency on the Beam SDK. -->
     <dependency>
       <groupId>org.apache.beam</groupId>
