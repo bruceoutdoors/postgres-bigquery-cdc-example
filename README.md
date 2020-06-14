@@ -56,7 +56,29 @@ export PUBSUB_EMULATOR_HOST=localhost:8085
 python pubsub-client.py
 
 
-# -----------------------------------------------------------------------------------
+# Kotlin (uses Kafka instead of pubsub) ---------------------------------------------
+
+# Direct Runner (--output is optional and writes to files)
+mvn compile exec:java \
+    -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
+    -Dexec.args="--output=written-records \
+                 --project=crafty-apex-264713
+                "
+
+# Dataflow Runner (Doesn't Work. For some reason it keeps trying to access the Kafka instance while sending the job)
+mvn compile exec:java \
+    -P dataflow-runner \
+    -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
+    -Dexec.args="--runner=DataflowRunner \
+                 --project=crafty-apex-264713 \
+                 --region=asia-east1 \
+                 --tempLocation=gs://kakfa-testing-bucket/tmp \
+                 --stagingLocation=gs://kakfa-testing-bucket/staging \
+                 --schemaRegistry=http://10.140.0.4:8081 \
+                 --bootstrapServers=http://10.140.0.4:9092
+                "
+
+# Python -----------------------------------------------------------------------------
 
 # Direct Runner (You may want to comment out BigQuery task)
 python postgres-bigquery-beam.py \
@@ -72,7 +94,7 @@ python postgres-bigquery-beam.py \
     --temp_location gs://kakfa-testing-bucket/tmp \
     --staging_location gs://kakfa-testing-bucket/staging \
     --failed-bq-inserts gs://kakfa-testing-bucket/failed_inserts \
-    --schema-registry 'http://10.140.0.4:8081' \
+    --schema_registry 'http://10.140.0.4:8081' \
     --requirements_file dataflow-requirements.txt
 
 ```
@@ -84,6 +106,9 @@ I've initially used [confluent-kafka[avro]](https://docs.confluent.io/current/cl
   deliberately go to the Job worker logs in a separate pop-up to see the error messages - in the job monitor itself
    the error is nowhere to be found, but the job seems to be running without producing any results.
 
+## Helpful References
+
+- [andrewrjones/debezium-kafka-beam-example](https://github.com/andrewrjones/debezium-kafka-beam-example)
 
 ## Related
 
