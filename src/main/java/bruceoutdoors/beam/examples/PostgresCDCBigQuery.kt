@@ -58,7 +58,7 @@ object PostgresCDCBigQuery {
             return TableRow()
                     .set("id", record.value.get("id") as Long)
                     .set("first_name", record.value.get("first_name") as String)
-                    .set("last_time", record.value.get("last_time") as String)
+                    .set("last_name", record.value.get("last_name") as String)
                     .set("email", record.value.get("email") as String)
                     .set("__op", record.value.get("__op") as String)
                     .set("__source_ts_ms", record.value.get("__source_ts_ms") as Long)
@@ -84,7 +84,7 @@ object PostgresCDCBigQuery {
                         .setName("first_name")
                         .setType("STRING"),
                 TableFieldSchema()
-                        .setName("last_time")
+                        .setName("last_name")
                         .setType("STRING"),
                 TableFieldSchema()
                         .setName("email")
