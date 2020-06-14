@@ -6,6 +6,9 @@ Alternatively you can consider using a more low level connector API using [Cloud
 
 **This is totally experimental and you should not be using this in production.**
 
+KafPubSub currently works on a per-topic level. It is possible to periodically query zoo-keeper for list of topics
+ and stream accordingly, but this has not been investigated at length.
+
 ## Run Locally
 
 ```sh
