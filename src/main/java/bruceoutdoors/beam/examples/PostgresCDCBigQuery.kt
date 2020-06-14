@@ -24,6 +24,7 @@ import com.google.api.services.bigquery.model.TableSchema
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.util.Utf8
@@ -48,21 +49,28 @@ import java.io.IOException
 
 object PostgresCDCBigQuery {
     const val WINDOW_SIZE: Long = 2
+    private lateinit var avroDeserializer: KafkaAvroDeserializer
 
     interface Options : PipelineOptions {
-        @get:Description("Path of the file to read from")
-        @get:Default.String("gs://apache-beam-samples/shakespeare/kinglear.txt")
-        var inputFile: String
+        @get:Description("Confluent Schema Registry URL")
+        @get:Default.String("http://localhost:8081")
+        var schemaRegistry : String
 
         @get:Description("Path of the file to write to")
-        var output: String
+        var output: String?
+
+        @get:Description("auto.offset.reset setting in kafka")
+        @get:Default.String("earliest")
+        var auto_offset_reset: String
+
+        @get:Description("Bootstrap Servers")
+        @get:Default.String("localhost:9092")
+        var bootstrapServers: String
     }
 
     class AvroToRow : InferableFunction<KV<ByteArray, ByteArray>, TableRow>() {
         override fun apply(record: KV<ByteArray, ByteArray>): TableRow {
-            val schemaClient = CachedSchemaRegistryClient("http://localhost:8081", 2147483647)
-            val deserializer = KafkaAvroDeserializer(schemaClient)
-            val rec = deserializer.deserialize("peanut", record.value) as GenericRecord
+            val rec = avroDeserializer.deserialize("peanut", record.value) as GenericRecord
 
             return TableRow()
                     .set("id", rec.get("id") as Int)
@@ -109,16 +117,14 @@ object PostgresCDCBigQuery {
                         .setType("INT64")
         ))
 
-
-
+        val schemaClient = CachedSchemaRegistryClient(options.schemaRegistry, 2147483647)
+        avroDeserializer = KafkaAvroDeserializer(schemaClient)
 
         var tableData = p.apply("Read from Kafka",
                 KafkaIO.read<ByteArray, ByteArray>()
-                        .withBootstrapServers(  "localhost:9092")
+                        .withBootstrapServers(options.bootstrapServers)
                         .withTopic("dbserver1.inventory.customers")
-                        .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", "earliest" as Any))
-                        .withConsumerConfigUpdates(ImmutableMap.of("specific.avro.reader", "true" as Any))
-                        .withConsumerConfigUpdates(ImmutableMap.of("schema.registry.url", "http://localhost:8081" as Any))
+                        .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", options.auto_offset_reset as Any))
                         // It's strange the below line does not work because DeserializerProvider is a private interface
 //                        .withValueDeserializer(ConfluentSchemaRegistryDeserializerProvider.of("http://localhost:8081", "dbserver1.inventory.customers"))
                         .withKeyDeserializer(ByteArrayDeserializer::class.java)
@@ -139,10 +145,14 @@ object PostgresCDCBigQuery {
                             .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
             )
         } else {
-            tableData.apply("Write To File (Testing Only)",
+            tableData.apply("Convert Rows To Pretty String",
                     MapElements.into(TypeDescriptor.of(String::class.java))
                             .via(ProcessFunction<TableRow, String> { input -> input.toPrettyString() })
-                            .apply { TextIO.write().to(options.output) }
+            ).apply("Write To File (Testing Only)",
+                    TextIO.write()
+                            .withWindowedWrites()
+                            .withNumShards(1)
+                            .to(options.output)
             )
         }
 

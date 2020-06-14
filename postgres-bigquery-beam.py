@@ -28,7 +28,7 @@ def avro_to_row(schema_registry):
 def run(argv=None, save_main_session=True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--schema-registry',
+        '--schema_registry',
         dest='schema_registry',
         default='http://127.0.0.1:8081',
         help='Schema registry endpoint. Defaults to local endpoint.')

@@ -60,25 +60,28 @@ export PUBSUB_EMULATOR_HOST=localhost:8085
 python pubsub-client.py
 
 
-# Kotlin ----------------------------------------------------------------------------
+# Kotlin (uses Kafka instead of pubsub) ---------------------------------------------
 
-# Direct Runner
+# Direct Runner (--output is optional and writes to files)
 mvn compile exec:java \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
-    -Dexec.args="--project=crafty-apex-264713
-                " 
+    -Dexec.args="--output=written-records \
+                 --project=crafty-apex-264713
+                "
+
 
 # Dataflow Runner
 mvn compile exec:java \
     -P dataflow-runner \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
-    -Dexec.args="--project crafty-apex-264713 \
-                 --region asia-east1 \
-                 --temp_location gs://kakfa-testing-bucket/tmp \
-                 --staging_location gs://kakfa-testing-bucket/staging \
-                 --schema-registry 'http://10.140.0.4:8081' \
-                 --requirements_file dataflow-requirements.txt
-                " 
+    -Dexec.args="--runner=DataflowRunner \
+                 --project=crafty-apex-264713 \
+                 --region=asia-east1 \
+                 --tempLocation=gs://kakfa-testing-bucket/tmp \
+                 --stagingLocation=gs://kakfa-testing-bucket/staging \
+                 --schemaRegistry=http://10.140.0.4:8081 \
+                 --bootstrapServers=http://10.140.0.4:9092
+                "
 
 # Python -----------------------------------------------------------------------------
 
@@ -96,7 +99,7 @@ python postgres-bigquery-beam.py \
     --temp_location gs://kakfa-testing-bucket/tmp \
     --staging_location gs://kakfa-testing-bucket/staging \
     --failed-bq-inserts gs://kakfa-testing-bucket/failed_inserts \
-    --schema-registry 'http://10.140.0.4:8081' \
+    --schema_registry 'http://10.140.0.4:8081' \
     --requirements_file dataflow-requirements.txt
 
 ```
