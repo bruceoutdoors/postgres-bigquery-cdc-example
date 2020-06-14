@@ -1,4 +1,5 @@
 fastavro==0.21.23
 google-cloud-pubsub
-confluent-kafka[avro] 
-apache-beam[gcp]>=2.16.0
+python-schema-registry-client
+confluent-kafka[avro]
+apache-beam[gcp]>=2.22.0
