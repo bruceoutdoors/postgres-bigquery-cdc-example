@@ -23,23 +23,21 @@ import com.google.api.services.bigquery.model.TableRow
 import com.google.api.services.bigquery.model.TableSchema
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
-import io.confluent.kafka.serializers.KafkaAvroDeserializer
-import org.apache.avro.generic.GenericData.Record
+import org.apache.avro.generic.GenericRecord
 import org.apache.beam.sdk.Pipeline
-import org.apache.beam.sdk.coders.AvroCoder
 import org.apache.beam.sdk.io.TextIO
 import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
+import org.apache.beam.sdk.io.kafka.DeserializerProvider
+import org.apache.beam.sdk.io.kafka.ConfluentSchemaRegistryDeserializerProvider
 import org.apache.beam.sdk.options.*
 import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
 import org.apache.beam.sdk.transforms.windowing.Window
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.TypeDescriptor
-import org.apache.kafka.common.serialization.Deserializer
 import org.joda.time.Duration
 import java.io.IOException
-
 
 object PostgresCDCBigQuery {
     const val WINDOW_SIZE: Long = 2
@@ -53,8 +51,8 @@ object PostgresCDCBigQuery {
         var output: String
     }
 
-    class AvroToRow : InferableFunction<KV<ByteArray, Record>, TableRow>() {
-        override fun apply(record: KV<ByteArray, Record>): TableRow {
+    class AvroToRow : InferableFunction<KV<ByteArray, GenericRecord>, TableRow>() {
+        override fun apply(record: KV<ByteArray, GenericRecord>): TableRow {
             return TableRow()
                     .set("id", record.value.get("id") as Long)
                     .set("first_name", record.value.get("first_name") as String)
@@ -102,16 +100,16 @@ object PostgresCDCBigQuery {
 
 
         var tableData = p.apply("Read from Kafka",
-                KafkaIO.read<ByteArray, Record>()
+                KafkaIO.read<ByteArray, GenericRecord>()
                         .withBootstrapServers("localhost:9092")
                         .withTopic("dbserver1.inventory.customers")
                         .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", "earliest" as Any))
                         .withConsumerConfigUpdates(ImmutableMap.of("specific.avro.reader", "true" as Any))
                         .withConsumerConfigUpdates(ImmutableMap.of("schema.registry.url", "http://localhost:8081" as Any))
-                        .withValueDeserializerAndCoder(KafkaAvroDeserializer::class.java as Class<out Deserializer<Record>>, AvroCoder.of(Record::class.java))
+                        .withValueDeserializer(ConfluentSchemaRegistryDeserializerProvider.of("http://localhost:8081", "dbserver1.inventory.customers"))
                         .withoutMetadata()
         ).apply("2 Second Window",
-                Window.into<KV<ByteArray, Record>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
+                Window.into<KV<ByteArray, GenericRecord>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
         ).apply("Avro to Row",
                 MapElements.via(AvroToRow())
         )
