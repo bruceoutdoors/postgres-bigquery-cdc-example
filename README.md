@@ -69,7 +69,7 @@ mvn compile exec:java \
                  --project=crafty-apex-264713
                 "
 
-# Dataflow Runner (Doesn't Work)
+# Dataflow Runner (Doesn't Work. For some reason it keeps trying to access the Kafka instance while sending the job)
 mvn compile exec:java \
     -P dataflow-runner \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
