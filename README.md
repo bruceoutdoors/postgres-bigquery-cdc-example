@@ -84,15 +84,18 @@ mvn compile exec:java \
 
 # Direct Runner (You may want to comment out BigQuery task)
 python postgres-bigquery-beam.py \
+    --failed-bq-inserts failed-inserts \
     --project crafty-apex-264713
 
-# Run in job in Dataflow (can't get this to work...):
+# Run in job in Dataflow:
+export GOOGLE_APPLICATION_CREDENTIALS=/home/bruce/secret_gcp.json
 python postgres-bigquery-beam.py \
     --runner DataflowRunner \
     --project crafty-apex-264713 \
     --region asia-east1 \
     --temp_location gs://kakfa-testing-bucket/tmp \
     --staging_location gs://kakfa-testing-bucket/staging \
+    --failed-bq-inserts gs://kakfa-testing-bucket/failed_inserts \
     --schema-registry 'http://10.140.0.4:8081' \
     --requirements_file dataflow-requirements.txt
 
