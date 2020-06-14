@@ -23,19 +23,26 @@ import com.google.api.services.bigquery.model.TableRow
 import com.google.api.services.bigquery.model.TableSchema
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericRecord
+import org.apache.avro.util.Utf8
 import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.io.TextIO
-import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
-import org.apache.beam.sdk.io.kafka.DeserializerProvider
-import org.apache.beam.sdk.io.kafka.ConfluentSchemaRegistryDeserializerProvider
-import org.apache.beam.sdk.options.*
-import org.apache.beam.sdk.transforms.*
+import org.apache.beam.sdk.io.kafka.KafkaIO
+import org.apache.beam.sdk.options.Default
+import org.apache.beam.sdk.options.Description
+import org.apache.beam.sdk.options.PipelineOptions
+import org.apache.beam.sdk.options.PipelineOptionsFactory
+import org.apache.beam.sdk.transforms.InferableFunction
+import org.apache.beam.sdk.transforms.MapElements
+import org.apache.beam.sdk.transforms.ProcessFunction
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
 import org.apache.beam.sdk.transforms.windowing.Window
 import org.apache.beam.sdk.values.KV
 import org.apache.beam.sdk.values.TypeDescriptor
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.joda.time.Duration
 import java.io.IOException
 
@@ -51,16 +58,20 @@ object PostgresCDCBigQuery {
         var output: String
     }
 
-    class AvroToRow : InferableFunction<KV<ByteArray, GenericRecord>, TableRow>() {
-        override fun apply(record: KV<ByteArray, GenericRecord>): TableRow {
+    class AvroToRow : InferableFunction<KV<ByteArray, ByteArray>, TableRow>() {
+        override fun apply(record: KV<ByteArray, ByteArray>): TableRow {
+            val schemaClient = CachedSchemaRegistryClient("http://localhost:8081", 2147483647)
+            val deserializer = KafkaAvroDeserializer(schemaClient)
+            val rec = deserializer.deserialize("peanut", record.value) as GenericRecord
+
             return TableRow()
-                    .set("id", record.value.get("id") as Long)
-                    .set("first_name", record.value.get("first_name") as String)
-                    .set("last_name", record.value.get("last_name") as String)
-                    .set("email", record.value.get("email") as String)
-                    .set("__op", record.value.get("__op") as String)
-                    .set("__source_ts_ms", record.value.get("__source_ts_ms") as Long)
-                    .set("__lsn", record.value.get("__lsn") as Long)
+                    .set("id", rec.get("id") as Int)
+                    .set("first_name", (rec.get("first_name") as Utf8).toString())
+                    .set("last_name", (rec.get("last_name") as Utf8).toString())
+                    .set("email", (rec.get("email")  as Utf8).toString())
+                    .set("__op", (rec.get("__op") as Utf8).toString())
+                    .set("__source_ts_ms", rec.get("__source_ts_ms") as Long)
+                    .set("__lsn", rec.get("__lsn") as Long)
         }
     }
 
@@ -99,17 +110,22 @@ object PostgresCDCBigQuery {
         ))
 
 
+
+
         var tableData = p.apply("Read from Kafka",
-                KafkaIO.read<ByteArray, GenericRecord>()
-                        .withBootstrapServers("localhost:9092")
+                KafkaIO.read<ByteArray, ByteArray>()
+                        .withBootstrapServers(  "localhost:9092")
                         .withTopic("dbserver1.inventory.customers")
                         .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", "earliest" as Any))
                         .withConsumerConfigUpdates(ImmutableMap.of("specific.avro.reader", "true" as Any))
                         .withConsumerConfigUpdates(ImmutableMap.of("schema.registry.url", "http://localhost:8081" as Any))
-                        .withValueDeserializer(ConfluentSchemaRegistryDeserializerProvider.of("http://localhost:8081", "dbserver1.inventory.customers"))
+                        // It's strange the below line does not work because DeserializerProvider is a private interface
+//                        .withValueDeserializer(ConfluentSchemaRegistryDeserializerProvider.of("http://localhost:8081", "dbserver1.inventory.customers"))
+                        .withKeyDeserializer(ByteArrayDeserializer::class.java)
+                        .withValueDeserializer(ByteArrayDeserializer::class.java)
                         .withoutMetadata()
         ).apply("2 Second Window",
-                Window.into<KV<ByteArray, GenericRecord>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
+                Window.into<KV<ByteArray, ByteArray>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
         ).apply("Avro to Row",
                 MapElements.via(AvroToRow())
         )
@@ -120,7 +136,7 @@ object PostgresCDCBigQuery {
                             .to(tableSpec)
                             .withSchema(tableSchema)
                             .withCreateDisposition(BigQueryIO.Write.CreateDisposition.CREATE_IF_NEEDED)
-                            .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_TRUNCATE)
+                            .withWriteDisposition(BigQueryIO.Write.WriteDisposition.WRITE_APPEND)
             )
         } else {
             tableData.apply("Write To File (Testing Only)",

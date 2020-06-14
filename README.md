@@ -104,6 +104,7 @@ python postgres-bigquery-beam.py \
 ## Helpful References
 
 - [`confluent_kafka` API](https://docs.confluent.io/current/clients/confluent-kafka-python/)
+- [andrewrjones/debezium-kafka-beam-example](https://github.com/andrewrjones/debezium-kafka-beam-example)
 
 ## Related
 
