@@ -57,7 +57,7 @@ def run(argv=None, save_main_session=True):
               | '2 Second Window' >>
                 beam.WindowInto(window.FixedWindows(2))
               | 'Avro to Row' >>
-                beam.Map(avro_to_row(known_args.schema_registry))
+                beam.FlatMap(avro_to_row(known_args.schema_registry))
               # | 'Write to File' >>
               #       beam.io.WriteToText('args.output')
               | 'Write to BigQuery' >>
@@ -76,10 +76,13 @@ def run(argv=None, save_main_session=True):
               )
 
         # Can't get this to run in dataflow - causes job graph that is not updatable
+        # In direct runner I can't get it to spit any errors
+        """
         (bq[BigQueryWriteFn.FAILED_ROWS]
             | 'Write Failed Rows' >>
               beam.io.WriteToText(known_args.failed_bq_inserts)
         )
+        """
 
 
 if __name__ == '__main__':

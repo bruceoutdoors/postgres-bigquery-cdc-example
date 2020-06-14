@@ -64,6 +64,7 @@ python pubsub-client.py
 
 # Direct Runner (You may want to comment out BigQuery task)
 python postgres-bigquery-beam.py \
+    --failed-bq-inserts failed-inserts \
     --project crafty-apex-264713
 
 # Run in job in Dataflow:
