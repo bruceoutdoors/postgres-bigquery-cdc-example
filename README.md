@@ -69,8 +69,7 @@ mvn compile exec:java \
                  --project=crafty-apex-264713
                 "
 
-
-# Dataflow Runner
+# Dataflow Runner (Doesn't Work)
 mvn compile exec:java \
     -P dataflow-runner \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \

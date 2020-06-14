@@ -32,10 +32,7 @@ import org.apache.beam.sdk.Pipeline
 import org.apache.beam.sdk.io.TextIO
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.io.kafka.KafkaIO
-import org.apache.beam.sdk.options.Default
-import org.apache.beam.sdk.options.Description
-import org.apache.beam.sdk.options.PipelineOptions
-import org.apache.beam.sdk.options.PipelineOptionsFactory
+import org.apache.beam.sdk.options.*
 import org.apache.beam.sdk.transforms.InferableFunction
 import org.apache.beam.sdk.transforms.MapElements
 import org.apache.beam.sdk.transforms.ProcessFunction
@@ -51,7 +48,7 @@ object PostgresCDCBigQuery {
     const val WINDOW_SIZE: Long = 2
     private lateinit var avroDeserializer: KafkaAvroDeserializer
 
-    interface Options : PipelineOptions {
+    interface Options : PipelineOptions, StreamingOptions {
         @get:Description("Confluent Schema Registry URL")
         @get:Default.String("http://localhost:8081")
         var schemaRegistry : String
@@ -70,6 +67,7 @@ object PostgresCDCBigQuery {
 
     class AvroToRow : InferableFunction<KV<ByteArray, ByteArray>, TableRow>() {
         override fun apply(record: KV<ByteArray, ByteArray>): TableRow {
+            // I don't know why 1st param is even needed; it's never used.
             val rec = avroDeserializer.deserialize("peanut", record.value) as GenericRecord
 
             return TableRow()
@@ -86,6 +84,7 @@ object PostgresCDCBigQuery {
     @Throws(IOException::class)
     @JvmStatic
     fun runPipeline(options: Options) {
+        options.setStreaming(true)
         val p = Pipeline.create(options)
 
         val tableSpec: TableReference = TableReference()
