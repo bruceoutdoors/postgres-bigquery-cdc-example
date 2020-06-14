@@ -107,6 +107,7 @@ object PostgresCDCBigQuery {
                         .withTopic("dbserver1.inventory.customers")
                         .withConsumerConfigUpdates(ImmutableMap.of("auto.offset.reset", "earliest" as Any))
                         .withConsumerConfigUpdates(ImmutableMap.of("specific.avro.reader", "true" as Any))
+                        .withConsumerConfigUpdates(ImmutableMap.of("schema.registry.url", "http://localhost:8081" as Any))
                         .withValueDeserializerAndCoder(KafkaAvroDeserializer::class.java as Class<out Deserializer<GenericRecord>>, AvroCoder.of(GenericRecord::class.java))
                         .withoutMetadata()
         ).apply("2 Second Window",
