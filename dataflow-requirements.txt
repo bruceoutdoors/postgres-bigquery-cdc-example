@@ -1,1 +1,1 @@
-confluent-kafka[avro]
+python-schema-registry-client

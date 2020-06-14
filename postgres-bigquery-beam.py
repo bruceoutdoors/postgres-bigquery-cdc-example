@@ -5,16 +5,18 @@ from apache_beam.transforms import window
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
 from apache_beam.io.gcp.bigquery import BigQueryWriteFn
-from simple_avro_deserializer import SimpleAvroDeserializer
+from schema_registry.client import SchemaRegistryClient
+from schema_registry.serializers import MessageSerializer
 import logging
 
 
 def avro_to_row(schema_registry):
-    serialize = SimpleAvroDeserializer(schema_registry)
+    client = SchemaRegistryClient(schema_registry)
+    serializer = MessageSerializer(client)
 
     def convert(msg):
         try:
-            dat = serialize(msg)
+            dat = serializer.decode_message(msg)
         except Exception as e:
             logging.warning(f'Serialize Error! ({e}) - Payload: {msg}')
             return []
