@@ -65,12 +65,15 @@ python postgres-bigquery-beam.py \
 
 # Flink (doesn't work :P)
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-    --net=host flink-with-docker
+     --net=host \
+    flink-with-docker
 
 python postgres-bigquery-beam.py \
     --runner PortableRunner \
     --environment_type LOOPBACK \
     --job_endpoint localhost:8099 \
+    --failed-bq-inserts failed-inserts \
+    --requirements_file dataflow-requirements.txt \
     --project crafty-apex-264713
 
 # Run in job in Dataflow:
