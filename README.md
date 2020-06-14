@@ -2,10 +2,6 @@
 
 A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Avro, Dataflow+Python.
 
-## TODO
-
-- the dataflow part
-
 ## Quickstart
 
 ```sh
@@ -81,9 +77,15 @@ python postgres-bigquery-beam.py \
 
 ```
 
-## Helpful References
+## Misc Notes
 
-- [`confluent_kafka` API](https://docs.confluent.io/current/clients/confluent-kafka-python/)
+I've initially used [confluent-kafka[avro]](https://docs.confluent.io/current/clients/confluent-kafka-python/), but
+ because it requires some [non-PyPi setup](https://beam.apache.org/documentation/sdks/python-pipeline-dependencies
+ /) which I simply could not get to work. I've since switched to use [python-schema-registry-client](https://github
+ .com/marcosschroh/python-schema-registry-client). Figuring this out is notoriously hard since you had to
+  deliberately go to the Job worker logs in a separate pop-up to see the error messages - in the job monitor itself
+   the error is nowhere to be found, but the job seems to be running without producing any results.
+
 
 ## Related
 
