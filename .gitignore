@@ -6,6 +6,7 @@ __pycache__/
 *.idea/
 .gradle
 target
+beam-temp**
 .classpath
 .project
 .settings
