@@ -65,7 +65,7 @@ python pubsub-client.py
 # Direct Runner
 mvn compile exec:java \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
-    -Dexec.args="--project crafty-apex-264713
+    -Dexec.args="--project=crafty-apex-264713
                 " 
 
 # Dataflow Runner
