@@ -66,9 +66,8 @@ mvn compile exec:java \
                 "
 
 # Dataflow Runner (Must be executed from where it can access Kafka)
-# Doesn't work... java.io.IOException: Reader-0: Timeout while initializing partition 'dbserver1.inventory.customers-0
-'. Kafka
- client may not be able to connect to servers.
+# Doesn't work... java.io.IOException: Reader-0: Timeout while initializing partition
+# 'dbserver1.inventory.customers-0'. Kafka client may not be able to connect to servers.
 mvn compile exec:java \
     -P dataflow-runner \
     -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
