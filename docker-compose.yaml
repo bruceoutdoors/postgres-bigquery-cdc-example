@@ -88,12 +88,22 @@ services:
       - 6123
     ports:
       - 8082:8082
-    command: jobmanager
+    # Flink writes history as flink user. Need chown to change folder from root to flink
+    # TODO: WebUI not display the history even after it's saved... >_<
+    entrypoint: /bin/bash -c "
+        chown flink:flink /opt/flink/history/
+        && /docker-entrypoint.sh jobmanager
+        "
+    volumes:
+      - flink-history-volume:/opt/flink/history
     environment:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: localhost
         rest.bind-port: 8082
+        jobmanager.archive.fs.dir: file:///opt/flink/history
+        historyserver.archive.fs.refresh-interval: 10000
+        historyserver.web.port: 8086
 
   taskmanager:
     image: ${FLINK_DOCKER_IMAGE_NAME:-flink}
@@ -115,3 +125,4 @@ volumes:
   zookeeper-data-volume:
   kafka-data-volume:
   postgres-volume:
+  flink-history-volume:

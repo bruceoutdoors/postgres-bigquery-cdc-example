@@ -124,6 +124,7 @@ I've initially used [confluent-kafka[avro]](https://docs.confluent.io/current/cl
 ## Helpful References
 
 - [andrewrjones/debezium-kafka-beam-example](https://github.com/andrewrjones/debezium-kafka-beam-example)
+- [knaufk/demo-beam-summit-2018](https://github.com/knaufk/demo-beam-summit-2018/)
 
 ## Related
 
