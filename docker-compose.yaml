@@ -89,7 +89,7 @@ services:
     ports:
       - 8082:8082
     # Flink writes history as flink user. Need chown to change folder from root to flink
-    # TODO: WebUI not display the history even after it's saved... >_<
+    # NOTE: history server is a separate REST service 
     entrypoint: /bin/bash -c "
         chown flink:flink /opt/flink/history/
         && /docker-entrypoint.sh jobmanager
