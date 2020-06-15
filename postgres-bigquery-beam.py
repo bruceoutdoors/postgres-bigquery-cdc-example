@@ -15,9 +15,12 @@ def avro_to_row(schema_registry):
     client = SchemaRegistryClient(schema_registry)
     serializer = MessageSerializer(client)
 
-    def convert(msg, val=None):
-        if val is not None:
-            msg = val  # Assume it's from Kafka instead of PubSub
+    def convert(msg):
+        if not isinstance(msg, bytes):
+            # Naively assume it is Kafka KV if not PubSub bytestring payload:
+            msg = msg[1]
+            assert isinstance(msg, bytes)
+
         try:
             dat = serializer.decode_message(msg)
         except Exception as e:
@@ -60,7 +63,7 @@ def run(argv=None, save_main_session=True):
              #  ReadFromPubSub(topic=pubsub_topic)
               | 'Read from Kafka' >>
                 ReadFromKafka(consumer_config={"bootstrap.servers": "localhost:9092"},
-                              expansion_service="localhost:8097",  # TODO: For local only!!
+                              # expansion_service="localhost:8097",  # TODO: For local only!!
                               topics=[kafka_topic])
               | '2 Second Window' >>
                 beam.WindowInto(window.FixedWindows(2))
