@@ -1,6 +1,8 @@
 # Postgres to BigQuery CDC Pipeline Example
 
-A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Avro, Dataflow+Python.
+A CDC pipeline that streams postgres database table changes to BigQuery via Debezium, PubSub, Avro, Dataflow+Python...
+
+At least, that's the original plan. Now this repo is just a mix bag of experiments with Apache Beam.
 
 ## Quickstart
 
@@ -78,6 +80,17 @@ mvn compile exec:java \
                  --stagingLocation=gs://kakfa-testing-bucket/staging \
                  --schemaRegistry=http://10.140.0.4:8081 \
                  --bootstrapServers=http://10.140.0.4:9092
+                "
+
+# Flink Runner (Experimental!)
+mvn compile exec:java \
+    -P flink-runner \
+    -Dexec.mainClass=bruceoutdoors.beam.examples.PostgresCDCBigQuery \
+    -Dexec.args="--runner=FlinkRunner \
+                 --flinkMaster=localhost:8082 \
+                 --project=crafty-apex-264713 \
+                 --schemaRegistry=http://localhost:8081 \
+                 --bootstrapServers=http://localhost:9092
                 "
 
 # Python -----------------------------------------------------------------------------

@@ -24,7 +24,6 @@ import com.google.api.services.bigquery.model.TableSchema
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
 import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.util.Utf8
@@ -33,12 +32,11 @@ import org.apache.beam.sdk.io.TextIO
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.options.*
-import org.apache.beam.sdk.transforms.InferableFunction
-import org.apache.beam.sdk.transforms.MapElements
-import org.apache.beam.sdk.transforms.ProcessFunction
+import org.apache.beam.sdk.transforms.*
 import org.apache.beam.sdk.transforms.windowing.FixedWindows
 import org.apache.beam.sdk.transforms.windowing.Window
 import org.apache.beam.sdk.values.KV
+import org.apache.beam.sdk.values.PCollection
 import org.apache.beam.sdk.values.TypeDescriptor
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.joda.time.Duration
@@ -46,7 +44,6 @@ import java.io.IOException
 
 object PostgresCDCBigQuery {
     const val WINDOW_SIZE: Long = 2
-    private lateinit var avroDeserializer: KafkaAvroDeserializer
 
     interface Options : PipelineOptions, StreamingOptions {
         @get:Description("Confluent Schema Registry URL")
@@ -65,19 +62,40 @@ object PostgresCDCBigQuery {
         var bootstrapServers: String
     }
 
-    class AvroToRow : InferableFunction<KV<ByteArray, ByteArray>, TableRow>() {
-        override fun apply(record: KV<ByteArray, ByteArray>): TableRow {
-            // I don't know why 1st param is even needed; it's never used.
-            val rec = avroDeserializer.deserialize("peanut", record.value) as GenericRecord
+    class AvroToRow : PTransform<PCollection<KV<ByteArray, ByteArray>>, PCollection<TableRow>>() {
+        var avroDeserializer: KafkaAvroDeserializer? = null
+        var schemaReg: ValueProvider<String>? = null
 
-            return TableRow()
-                    .set("id", rec.get("id") as Int)
-                    .set("first_name", (rec.get("first_name") as Utf8).toString())
-                    .set("last_name", (rec.get("last_name") as Utf8).toString())
-                    .set("email", (rec.get("email")  as Utf8).toString())
-                    .set("__op", (rec.get("__op") as Utf8).toString())
-                    .set("__source_ts_ms", rec.get("__source_ts_ms") as Long)
-                    .set("__lsn", rec.get("__lsn") as Long)
+        override fun expand(input: PCollection<KV<ByteArray, ByteArray>>): PCollection<TableRow> {
+            return input.apply(ParDo.of(object: DoFn<KV<ByteArray, ByteArray>, TableRow>() {
+                @ProcessElement
+                fun processElement(@DoFn.Element rec: KV<ByteArray, ByteArray>, out: DoFn.OutputReceiver<TableRow>) {
+                    if (avroDeserializer == null) {
+                        if (schemaReg == null) {
+                            throw RuntimeException("Schema Registry must be defined!")
+                        }
+
+                        val schemaClient = CachedSchemaRegistryClient(schemaReg?.get(), 2147483647)
+                        avroDeserializer = KafkaAvroDeserializer(schemaClient)
+                    }
+
+                    val decoded = avroDeserializer!!.deserialize("peanut", rec.value) as GenericRecord
+
+                    out.output(TableRow()
+                            .set("id", decoded.get("id") as Int)
+                            .set("first_name", (decoded.get("first_name") as Utf8).toString())
+                            .set("last_name", (decoded.get("last_name") as Utf8).toString())
+                            .set("email", (decoded.get("email")  as Utf8).toString())
+                            .set("__op", (decoded.get("__op") as Utf8).toString())
+                            .set("__source_ts_ms", decoded.get("__source_ts_ms") as Long)
+                            .set("__lsn", decoded.get("__lsn") as Long));
+                }
+            }))
+        }
+
+        fun setSchemaReg(schReg: String): AvroToRow {
+            schemaReg = ValueProvider.StaticValueProvider.of(schReg) as ValueProvider<String>
+            return this
         }
     }
 
@@ -116,9 +134,6 @@ object PostgresCDCBigQuery {
                         .setType("INT64")
         ))
 
-        val schemaClient = CachedSchemaRegistryClient(options.schemaRegistry, 2147483647)
-        avroDeserializer = KafkaAvroDeserializer(schemaClient)
-
         var tableData = p.apply("Read from Kafka",
                 KafkaIO.read<ByteArray, ByteArray>()
                         .withBootstrapServers(options.bootstrapServers)
@@ -132,7 +147,7 @@ object PostgresCDCBigQuery {
         ).apply("2 Second Window",
                 Window.into<KV<ByteArray, ByteArray>>(FixedWindows.of(Duration.standardSeconds(WINDOW_SIZE)))
         ).apply("Avro to Row",
-                MapElements.via(AvroToRow())
+                AvroToRow().setSchemaReg(options.schemaRegistry)
         )
 
         if (options.output == null) {

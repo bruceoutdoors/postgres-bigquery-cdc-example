@@ -81,13 +81,31 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
 
-  pubsub:
-    image: gcr.io/google.com/cloudsdktool/cloud-sdk
+  jobmanager:
+    image: ${FLINK_DOCKER_IMAGE_NAME:-flink}
+    network_mode: "host"
+    expose:
+      - 6123
     ports:
-      - 8085:8085
-    networks:
-      - dbz-net
-    command: gcloud beta emulators pubsub start --host-port=0.0.0.0:8085
+      - 8082:8082
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: localhost
+        rest.bind-port: 8082
+
+  taskmanager:
+    image: ${FLINK_DOCKER_IMAGE_NAME:-flink}
+    network_mode: "host"
+    expose:
+      - 6121
+      - 6122
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: localhost
 
 networks:
   dbz-net:
