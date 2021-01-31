@@ -4,6 +4,7 @@ import apache_beam as beam
 from apache_beam.transforms import window
 from apache_beam.options.pipeline_options import PipelineOptions, SetupOptions, StandardOptions
 from apache_beam.io import ReadFromPubSub, BigQueryDisposition, WriteToBigQuery
+from apache_beam.io.external.kafka import ReadFromKafka
 from apache_beam.io.gcp.bigquery import BigQueryWriteFn
 from schema_registry.client import SchemaRegistryClient
 from schema_registry.serializers import MessageSerializer
@@ -15,6 +16,11 @@ def avro_to_row(schema_registry):
     serializer = MessageSerializer(client)
 
     def convert(msg):
+        if not isinstance(msg, bytes):
+            # Naively assume it is Kafka KV if not PubSub bytestring payload:
+            msg = msg[1]
+            assert isinstance(msg, bytes)
+
         try:
             dat = serializer.decode_message(msg)
         except Exception as e:
@@ -37,7 +43,6 @@ def run(argv=None, save_main_session=True):
     parser.add_argument(
         '--failed-bq-inserts',
         dest='failed_bq_inserts',
-        required=True,
         help='Bucket for writing failed inserts')
     known_args, pipeline_args = parser.parse_known_args(argv)
     pipeline_args.extend([
@@ -52,10 +57,14 @@ def run(argv=None, save_main_session=True):
     kafka_topic = 'dbserver1.inventory.customers'
     pubsub_topic = f'projects/{project_id}/topics/{kafka_topic}'
 
-    with beam.Pipeline(options=pipeline_options) as p:
+    with beam.Pipeline(options=pipeline_options) as p: 
         bq = (p
-              | 'Read from PubSub' >>
-                ReadFromPubSub(topic=pubsub_topic)
+             # | 'Read from PubSub' >>
+             #  ReadFromPubSub(topic=pubsub_topic)
+              | 'Read from Kafka' >>
+                ReadFromKafka(consumer_config={"bootstrap.servers": "localhost:9092"},
+                              # expansion_service="localhost:8097",  # TODO: For local only!!
+                              topics=[kafka_topic])
               | '2 Second Window' >>
                 beam.WindowInto(window.FixedWindows(2))
               | 'Avro to Row' >>
@@ -88,5 +97,5 @@ def run(argv=None, save_main_session=True):
 
 
 if __name__ == '__main__':
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
     run()
